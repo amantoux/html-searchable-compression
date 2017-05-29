@@ -1,1 +1,4 @@
 ./idea
+target/
+doc/
+.DS_Store
