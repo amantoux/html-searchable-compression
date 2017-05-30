@@ -56,15 +56,15 @@ public class Tag {
       this.rangeTo = rangeFrom;
   }
 
-  public TagName getTagName() {
+  public TagName tagName() {
     return tagName;
   }
 
-  public int getRangeFrom() {
+  public int from() {
     return rangeFrom;
   }
 
-  public int getRangeTo() {
+  public int to() {
     return rangeTo;
   }
 
@@ -74,7 +74,7 @@ public class Tag {
 
   @Override
   public String toString() {
-    return getTagName().toString() + "; " + getRangeFrom() + "; " + getRangeTo();
+    return tagName().toString() + "; " + from() + "; " + to();
   }
 
 }

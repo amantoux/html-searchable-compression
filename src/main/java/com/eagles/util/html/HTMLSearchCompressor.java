@@ -20,46 +20,64 @@ public class HTMLSearchCompressor {
     this.tagStack = new Stack<>();
   }
 
-  public String decode(String plain, Stack<Tag> tags) {
-    plainText = plain;
-    tagStack = tags;
-    StringBuilder html = new StringBuilder();
-    Stack<Tag> tempStack = new Stack<>();
-    int processedIndex = plainText.length();
-
-    while (tagStack.peek() != null) {
-      Tag nextTag = tagStack.pop();
-      String sub = plainText.substring(nextTag.getRangeTo(), processedIndex);
-      processedIndex = nextTag.getRangeTo();
-      html.insert(0, sub);
-      html.insert(0, nextTag.getTagName().closingString());
-      if (!nextTag.getTagName().isSelfClosing)
-        tempStack.push(nextTag);
-    }
-    System.out.println("After first stack: " + html.toString());
-    while (tempStack.peek() != null) {
-      Tag nextTag = tempStack.pop();
-      String sub = plainText.substring(nextTag.getRangeFrom(), processedIndex);
-      html.insert(0, sub);
-      html.insert(0, nextTag.getTagName().openingString());
-    }
-    return html.toString();
-  }
-
   public static void main(String[] args) {
     HTMLSearchCompressor parser = new HTMLSearchCompressor();
-    String toEncode = "This is a test, say<br><p>\"Hello <strong>wor<em>ld</em></strong>\"</p>";
+    String toEncode = "This is a test, <p><br><strong>s</strong>ay</p><p>\"Hello world\"</p>";
     System.out.println(toEncode);
+    System.out.println("");
     parser.encode(toEncode);
     System.out.println("---- encoding ----");
     System.out.println(parser.plainText);
     System.out.println(parser.tagStack);
+    System.out.println("");
     String out = parser.decode(parser.plainText, parser.tagStack);
     System.out.println("---- decoding ----");
     System.out.println(out);
+    System.out.println("");
+    System.out.println("---- diff ----");
+    System.out.println(toEncode.equals(out) ? "OK" : "NOK");
+    if (!toEncode.equals(out)) {
+      System.out.println(toEncode);
+      System.out.println(out);
+    }
+  }
 
+  public String decode(String plain, Stack<Tag> tags) {
 
+    StringBuilder html = new StringBuilder();
+    Stack<Tag> ts = new Stack<>();
+    int index = plain.length();
 
+    while (tags.peek() != null) {
+      Tag t = ts.peek();
+      if (t != null && tags.peek().to() <= t.from()) {
+        index = processOpeningTags(html, ts, index);
+      } else {
+        index = processClosingTags(html, ts, index);
+      }
+    }
+    while (ts.peek() != null) {
+      index = processOpeningTags(html, ts, index);
+    }
+    return html.insert(0, plain.substring(0, index)).toString();
+  }
+
+  private int processClosingTags(StringBuilder html, Stack<Tag> ts, int index) {
+    Tag t = tagStack.pop();
+    String s = plainText.substring(t.to(), index);
+    html.insert(0, s);
+    html.insert(0, t.tagName().closingString());
+    if (!t.tagName().isSelfClosing)
+      ts.push(t);
+    return t.to();
+  }
+
+  private int processOpeningTags(StringBuilder html, Stack<Tag> ts, int index) {
+    Tag t = ts.pop();
+    String s = plainText.substring(t.from(), index);
+    html.insert(0, s);
+    html.insert(0, t.tagName().openingString());
+    return t.from();
   }
 
   public void encode(String in) {
@@ -78,7 +96,7 @@ public class HTMLSearchCompressor {
 
       if (sTag.matches(TagName.getRegexOpening())) {
         Tag nextTag = new Tag(sTag, m.start() - currentCumulatedOffset);
-        if (nextTag.getTagName().isSelfClosing) {
+        if (nextTag.tagName().isSelfClosing) {
           tagStack.push(nextTag);
         } else {
           tempStack.push(nextTag);
@@ -89,7 +107,7 @@ public class HTMLSearchCompressor {
         Tag nextTag = tempStack.pop();
         String sTagName = TagName.prepareString(sTag);
 
-        if (nextTag == null || !nextTag.getTagName().toString().equals(sTagName))
+        if (nextTag == null || !nextTag.tagName().toString().equals(sTagName))
           throw new IllegalArgumentException(
             "Parser error - closing tag doesn't match current opening tag\n" + sTag);
 

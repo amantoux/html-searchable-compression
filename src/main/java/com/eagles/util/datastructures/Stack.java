@@ -65,7 +65,7 @@ public class Stack<ITEM> implements Iterable<ITEM> {
       stackString.append(it.next().toString());
       stackString.append("\n");
     }
-    return stackString.toString();
+    return stackString.deleteCharAt(stackString.length()-1).toString();
   }
 
   @Override
