@@ -11,28 +11,297 @@ import java.util.regex.Pattern;
 public class HTMLSearchCompressor {
 
   private String     input;
-  private Stack<Tag> tagStack;
+  private Stack<Tag> tags;
+  private Stack<Tag> selfClosings;
   private String     plainText;
 
   public HTMLSearchCompressor() {
     super();
     this.input = null;
-    this.tagStack = new Stack<>();
+    this.tags = new Stack<>();
+    this.selfClosings = new Stack<>();
   }
 
   public static void main(String[] args) {
     HTMLSearchCompressor parser = new HTMLSearchCompressor();
-    String toEncode = "This is a test, <p><br><strong>s</strong>ay</p><p>\"Hello world\"</p>";
-    System.out.println(toEncode);
-    System.out.println("");
+    long start, end;
+    String toEncode = "This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>"+"This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>\n"
+      + "This is a test<br>Say<p>\"Hello world\"</p>";
+    /*System.out.println(toEncode);
+    System.out.println("");*/
+    start = System.currentTimeMillis();
     parser.encode(toEncode);
+    long sizeInit = toEncode.length();
+    long sizeEnd = parser.plainText.length() + parser.selfClosings.size() + parser.tags.size();
+    System.out.println(sizeInit);
+    System.out.println(sizeEnd);
+    System.out.println((double)sizeEnd/(double)sizeInit*100 + "%");
+//    System.out.println(parser.selfClosings.size());
+//    System.out.println(parser.tags.size());
+    end = System.currentTimeMillis();
     System.out.println("---- encoding ----");
-    System.out.println(parser.plainText);
-    System.out.println(parser.tagStack);
+    System.out.println("Encoded in " + (end - start) + "ms");
+    /*System.out.println(parser.plainText);
+    System.out.println(parser.tags);
+    System.out.println(parser.selfClosings);*/
     System.out.println("");
-    String out = parser.decode(parser.plainText, parser.tagStack);
+    start = System.currentTimeMillis();
+    String out = parser.decode(parser.plainText, parser.tags, parser.selfClosings);
+    end = System.currentTimeMillis();
     System.out.println("---- decoding ----");
-    System.out.println(out);
+    System.out.println("Decoded in " + (end - start) + "ms");
+   /* System.out.println(out);*/
     System.out.println("");
     System.out.println("---- diff ----");
     System.out.println(toEncode.equals(out) ? "OK" : "NOK");
@@ -42,15 +311,29 @@ public class HTMLSearchCompressor {
     }
   }
 
-  public String decode(String plain, Stack<Tag> tags) {
+  public String decode(String plain, Stack<Tag> inTags, Stack<Tag> sClosings) {
+    this.tags = inTags;
+    this.selfClosings = sClosings;
+    this.plainText = plain;
 
     StringBuilder html = new StringBuilder();
     Stack<Tag> ts = new Stack<>();
     int index = plain.length();
+    Tag t;
 
+    /* Insert self closing tags in plain text */
+    processSelfClosingTags(sClosings, html, index);
+
+    /* Rebase input with included self closing tags */
+    index = plainText.length();
+    html = new StringBuilder();
+
+    /* Process tags from the stack */
     while (tags.peek() != null) {
-      Tag t = ts.peek();
-      if (t != null && tags.peek().to() <= t.from()) {
+      t = ts.peek();
+      boolean isNextTagClosingBeforeLastProcessed = t != null && tags.peek().to() <= t.from();
+      /*  */
+      if (isNextTagClosingBeforeLastProcessed) {
         index = processOpeningTags(html, ts, index);
       } else {
         index = processClosingTags(html, ts, index);
@@ -59,16 +342,28 @@ public class HTMLSearchCompressor {
     while (ts.peek() != null) {
       index = processOpeningTags(html, ts, index);
     }
-    return html.insert(0, plain.substring(0, index)).toString();
+    return html.insert(0, plainText.substring(0, index)).toString();
+  }
+
+  private void processSelfClosingTags(Stack<Tag> sClosings, StringBuilder html, int index) {
+    Tag t;
+    int idx = index;
+    while (sClosings.peek() != null) {
+      t = sClosings.pop();
+      html.insert(0, plainText.substring(t.to(), idx));
+      html.insert(0, t.tagName().openingString());
+      idx = t.from();
+    }
+    html.insert(0, plainText.substring(0, idx));
+    plainText = html.toString();
   }
 
   private int processClosingTags(StringBuilder html, Stack<Tag> ts, int index) {
-    Tag t = tagStack.pop();
+    Tag t = tags.pop();
     String s = plainText.substring(t.to(), index);
     html.insert(0, s);
     html.insert(0, t.tagName().closingString());
-    if (!t.tagName().isSelfClosing)
-      ts.push(t);
+    ts.push(t);
     return t.to();
   }
 
@@ -88,35 +383,46 @@ public class HTMLSearchCompressor {
     int nextToParseIndex = 0;
     StringBuilder sbPlainText = new StringBuilder();
     Stack<Tag> tempStack = new Stack<>();
-    int currentCumulatedOffset = 0;
+    int offset = 0;
+    int closingOffset = 0;
 
     /* decoding algorithm */
     while (m.find()) {
+
       String sTag = in.substring(m.start(), m.end());
+      Tag nextTag = null;
 
       if (sTag.matches(TagName.getRegexOpening())) {
-        Tag nextTag = new Tag(sTag, m.start() - currentCumulatedOffset);
-        if (nextTag.tagName().isSelfClosing) {
-          tagStack.push(nextTag);
+
+        if (TagName.isTag(sTag).isSelfClosing) {
+          nextTag = new Tag(sTag, m.start() - closingOffset - offset);
+          selfClosings.push(nextTag);
         } else {
+          nextTag = new Tag(sTag, m.start() - offset);
           tempStack.push(nextTag);
         }
       }
 
       if (sTag.matches(TagName.getRegexClosing())) {
-        Tag nextTag = tempStack.pop();
+        nextTag = tempStack.pop();
         String sTagName = TagName.prepareString(sTag);
 
         if (nextTag == null || !nextTag.tagName().toString().equals(sTagName))
           throw new IllegalArgumentException(
             "Parser error - closing tag doesn't match current opening tag\n" + sTag);
 
-        nextTag.setRangeTo(m.start() - currentCumulatedOffset);
-        tagStack.push(nextTag);
+        nextTag.setRangeTo(m.start() - offset);
+        tags.push(nextTag);
       }
+
       sbPlainText.append(in.substring(nextToParseIndex, m.start()));
       nextToParseIndex = m.start() + sTag.length();
-      currentCumulatedOffset += sTag.length();
+
+      if (nextTag == null || !nextTag.tagName().isSelfClosing)
+        offset += sTag.length();
+      else
+        closingOffset += sTag.length();
+
     }
     plainText = sbPlainText.toString();
   }
