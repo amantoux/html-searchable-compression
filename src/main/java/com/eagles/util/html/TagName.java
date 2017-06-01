@@ -6,6 +6,7 @@ package com.eagles.util.html;
 public enum TagName {
   P("p"), STRONG("strong"), EM("em"), BR("br", true), A("a");
 
+
   String string;
   boolean isSelfClosing = false;
 
@@ -20,16 +21,11 @@ public enum TagName {
 
   public static TagName isTag(String input) {
     String sTagName = prepareString(input);
-    for (TagName t: TagName.values()) {
+    for (TagName t : TagName.values()) {
       if (t.string.equals(sTagName))
         return t;
     }
     return null;
-  }
-
-  @Override
-  public String toString() {
-    return string;
   }
 
   public static String prepareString(String in) {
@@ -43,10 +39,12 @@ public enum TagName {
 
   public static String getRegex() {
     StringBuilder sbRegex = new StringBuilder();
+    sbRegex.append("</?(");
     for (TagName t : TagName.values()) {
-      sbRegex.append("</?").append(t.string).append('>').append('|');
+      sbRegex.append(t.string).append("|");
     }
-    sbRegex.deleteCharAt(sbRegex.length() - 1);
+    sbRegex.deleteCharAt(sbRegex.length()-1);
+    sbRegex.append(")\\s?(").append(StyleAttribute.ATTR_REGEX).append(")?>");
     return sbRegex.toString();
   }
 
@@ -61,21 +59,28 @@ public enum TagName {
 
   public static String getRegexOpening() {
     StringBuilder sbRegex = new StringBuilder();
+    sbRegex.append("<(");
     for (TagName t : TagName.values()) {
-      sbRegex.append('<').append(t.string).append('>').append('|');
+      sbRegex.append(t.string).append("|");
     }
-    sbRegex.deleteCharAt(sbRegex.length() - 1);
+    sbRegex.deleteCharAt(sbRegex.length()-1);
+    sbRegex.append(")\\s?(").append(StyleAttribute.ATTR_REGEX).append(")?>");
     return sbRegex.toString();
-  }
-
-  public String openingString() {
-    return "<" + toString() + ">";
   }
 
   public String closingString() {
     if (isSelfClosing)
       return openingString();
     return "</" + toString() + ">";
+  }
+
+  public String openingString() {
+    return "<" + toString() + ">";
+  }
+
+  @Override
+  public String toString() {
+    return string;
   }
 
   public static void main(String[] args) {

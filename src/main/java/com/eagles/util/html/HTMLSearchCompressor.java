@@ -6,18 +6,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * TODO : Support style attributes
+ * TODO : Support '<' & '>' in plain text
  * Created by Alan Mantoux.
  */
 public class HTMLSearchCompressor {
 
-  private String     input;
   private Stack<Tag> tags;
   private Stack<Tag> selfClosings;
   private String     plainText;
 
   public HTMLSearchCompressor() {
     super();
-    this.input = null;
     this.tags = new Stack<>();
     this.selfClosings = new Stack<>();
   }
@@ -25,18 +25,18 @@ public class HTMLSearchCompressor {
   public static void main(String[] args) {
     HTMLSearchCompressor parser = new HTMLSearchCompressor();
     long start, end;
-    String toEncode = "This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>123"
-      + "This is a test<br>Say<p>\"Hello world\"</p>This is a test<br>Say<p>\"<em>Hello</em> <strong>world</strong>\"</p>123";
+    String toEncode = "This is... <br><strong>REALLY <em>REALLY</em></strong><p style=\"{font-color:red;font-size:10em;}\">good</p>";
     start = System.currentTimeMillis();
     parser.encode(toEncode);
     end = System.currentTimeMillis();
     long sizeInit = toEncode.length();
     long sizeEnd = parser.plainText.length() + parser.selfClosings.size() + parser.tags.size();
-    double ratio = sizeEnd*100./sizeInit;
+    double ratio = sizeEnd * 100. / sizeInit;
     System.out.printf("Compression ratio : %2.2f%%%n", ratio);
     System.out.println("---- encoding ----");
     System.out.println("Encoded in " + (end - start) + "ms");
     System.out.println(parser.plainText);
+    System.out.println(parser.tags);
     System.out.println("");
     start = System.currentTimeMillis();
     String out = parser.decode(parser.plainText, parser.tags, parser.selfClosings);
@@ -46,6 +46,8 @@ public class HTMLSearchCompressor {
     System.out.println("");
     System.out.println("---- diff ----");
     System.out.println(toEncode.equals(out) ? "OK" : "NOK");
+    System.out.println(toEncode);
+    System.out.println(out);
     if (!toEncode.equals(out)) {
       System.out.println(toEncode);
       System.out.println(out);
@@ -103,7 +105,7 @@ public class HTMLSearchCompressor {
     Tag t = tags.pop();
     String s = plainText.substring(t.to(), index);
     html.insert(0, s);
-    html.insert(0, t.tagName().closingString());
+    html.insert(0, t.closingString());
     ts.push(t);
     return t.to();
   }
@@ -112,7 +114,7 @@ public class HTMLSearchCompressor {
     Tag t = ts.pop();
     String s = plainText.substring(t.from(), index);
     html.insert(0, s);
-    html.insert(0, t.tagName().openingString());
+    html.insert(0, t.openingString());
     return t.from();
   }
 
@@ -134,26 +136,11 @@ public class HTMLSearchCompressor {
       Tag nextTag = null;
 
       if (sTag.matches(TagName.getRegexOpening())) {
-
-        if (TagName.isTag(sTag).isSelfClosing) {
-          nextTag = new Tag(sTag, m.start() - closingOffset - offset);
-          selfClosings.push(nextTag);
-        } else {
-          nextTag = new Tag(sTag, m.start() - offset);
-          tempStack.push(nextTag);
-        }
+        nextTag = getTagOpening(m, tempStack, offset, closingOffset, sTag);
       }
 
       if (sTag.matches(TagName.getRegexClosing())) {
-        nextTag = tempStack.pop();
-        String sTagName = TagName.prepareString(sTag);
-
-        if (nextTag == null || !nextTag.tagName().toString().equals(sTagName))
-          throw new IllegalArgumentException(
-            "Parser error - closing tag doesn't match current opening tag\n" + sTag);
-
-        nextTag.setRangeTo(m.start() - offset);
-        tags.push(nextTag);
+        nextTag = getTagClosing(m, tempStack, offset, sTag);
       }
 
       sbPlainText.append(in.substring(nextToParseIndex, m.start()));
@@ -166,5 +153,51 @@ public class HTMLSearchCompressor {
 
     }
     plainText = sbPlainText.append(in.substring(nextToParseIndex)).toString();
+  }
+
+  private Tag getTagClosing(Matcher m, Stack<Tag> tempStack, int offset, String sTag) {
+    Tag nextTag;
+    nextTag = tempStack.pop();
+    String sTagName = TagName.prepareString(sTag);
+
+    if (nextTag == null || !nextTag.tagName().toString().equals(sTagName))
+      throw new IllegalArgumentException(
+        "Parser error - closing tag doesn't match current opening tag\n" + sTag);
+
+    nextTag.setRangeTo(m.start() - offset);
+    tags.push(nextTag);
+    return nextTag;
+  }
+
+  private Tag getTagOpening(Matcher m,
+                            Stack<Tag> tempStack,
+                            int offset,
+                            int closingOffset,
+                            String sTag) {
+    Tag nextTag;
+    TagName tName = TagName.isTag(sTag);
+    if (tName != null && tName.isSelfClosing) {
+      nextTag = new Tag(sTag, m.start() - closingOffset - offset);
+      styleAttribute(sTag, nextTag);
+      selfClosings.push(nextTag);
+    } else {
+      nextTag = new Tag(sTag, m.start() - offset);
+      styleAttribute(sTag, nextTag);
+      tempStack.push(nextTag);
+    }
+    return nextTag;
+  }
+
+  private void styleAttribute(String sTag, Tag t) {
+    Pattern p = Pattern.compile(StyleAttribute.ATTR_REGEX);
+    Matcher m = p.matcher(sTag);
+    if (m.find()) {
+      String sAttr = sTag.substring(m.start(), m.end());
+      String sMap = sAttr.split("\\{")[1].split("\\}")[0];
+      for (String s : sMap.split("\\;")) {
+        String[] sKeyValue = s.split("\\:");
+        t.addStyleAttribute(new StyleAttribute(sKeyValue[0].trim(), sKeyValue[1].trim()));
+      }
+    }
   }
 }
