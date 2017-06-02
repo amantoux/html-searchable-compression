@@ -37,21 +37,27 @@ public class HTMLSearchableCompression {
   public static void main(String[] args) {
     HTMLSearchableCompression parser = new HTMLSearchableCompression();
     long start, end;
-    String toEncode =
+    String seed =
       "This is... <br><strong>REALLY <em>REALLY</em></strong><p style=\"{font-color:red;font-size:10em;}\"><em>good</em></p>";
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < 1140; i++) {
+      sb.append(seed);
+    }
+    System.out.println(seed.length());
+    String toEncode = sb.toString();
     start = System.currentTimeMillis();
     parser.encode(toEncode);
     end = System.currentTimeMillis();
     int sizeInit = toEncode.length();
     int sizeEnd =
-      parser.plainText.length() + parser.selfClosings.size() * 3 + "font-color:red;font-size:10em;".length() - 4 + parser.tags.size() * 3;
+      parser.plainText.length() + parser.selfClosings.size() * 3 + ("font-color:red;font-size:10em;".length() - 4)*1000 + parser.tags.size() * 3;
     double ratio = sizeEnd * 100. / sizeInit;
     System.out.printf("Compression ratio : %2.2f%%%n", ratio);
     System.out.println("---- encoding ----");
     System.out.println("Encoded in " + (end - start) + "ms");
-    System.out.println(parser.plainText);
+    /*System.out.println(parser.plainText);
     System.out.println(parser.tags);
-    System.out.println(parser.selfClosings);
+    System.out.println(parser.selfClosings);*/
     System.out.println("");
     start = System.currentTimeMillis();
     String out = parser.decode(parser.plainText, parser.tags, parser.selfClosings);
@@ -61,8 +67,8 @@ public class HTMLSearchableCompression {
     System.out.println("");
     System.out.println("---- diff ----");
     System.out.println(toEncode.equals(out) ? "OK" : "NOK");
-    System.out.println(toEncode);
-    System.out.println(out);
+    /*System.out.println(toEncode);
+    System.out.println(out);*/
     if (!toEncode.equals(out)) {
       System.out.println(toEncode);
       System.out.println(out);
@@ -170,20 +176,20 @@ public class HTMLSearchableCompression {
     while (m.find()) {
 
       String sTag = in.substring(m.start(), m.end());
-      TagInstance nextTag = null;
+      TagInstance tInstance = null;
 
       if (sTag.matches(Tag.getRegexOpening())) {
-        nextTag = getTagOpening(m, tempStack, offset, closingOffset, sTag);
+        tInstance = getTagOpening(m, tempStack, offset, closingOffset, sTag);
       }
 
       if (sTag.matches(Tag.getRegexClosing())) {
-        nextTag = getTagClosing(m, tempStack, offset, sTag);
+        tInstance = getTagClosing(m, tempStack, offset, sTag);
       }
 
       sbPlainText.append(in.substring(nextToParseIndex, m.start()));
       nextToParseIndex = m.start() + sTag.length();
 
-      if (nextTag == null || !nextTag.tagName().isSelfClosing)
+      if (tInstance == null || !tInstance.tagName().isSelfClosing)
         offset += sTag.length();
       else
         closingOffset += sTag.length();
@@ -193,17 +199,17 @@ public class HTMLSearchableCompression {
   }
 
   private TagInstance getTagClosing(Matcher m, Stack<TagInstance> tempStack, int offset, String sTag) {
-    TagInstance nextTag;
-    nextTag = tempStack.pop();
+    TagInstance tInstance;
+    tInstance = tempStack.pop();
     String sTagName = Tag.prepareString(sTag);
 
-    if (nextTag == null || !nextTag.tagName().toString().equals(sTagName))
+    if (tInstance == null || !tInstance.tagName().toString().equals(sTagName))
       throw new IllegalArgumentException(
         "Parser error - closing tag doesn't match current opening tag\n" + sTag);
 
-    nextTag.setRangeTo(m.start() - offset);
-    tags.push(nextTag);
-    return nextTag;
+    tInstance.setRangeTo(m.start() - offset);
+    tags.push(tInstance);
+    return tInstance;
   }
 
   private TagInstance getTagOpening(Matcher m,
@@ -211,18 +217,18 @@ public class HTMLSearchableCompression {
                                     int offset,
                                     int closingOffset,
                                     String sTag) {
-    TagInstance nextTag;
+    TagInstance tInstance;
     Tag tName = Tag.isTag(sTag);
     if (tName != null && tName.isSelfClosing) {
-      nextTag = new TagInstance(sTag, m.start() - closingOffset - offset);
-      styleAttribute(sTag, nextTag);
-      selfClosings.push(nextTag);
+      tInstance = new TagInstance(sTag, m.start() - closingOffset - offset);
+      styleAttribute(sTag, tInstance);
+      selfClosings.push(tInstance);
     } else {
-      nextTag = new TagInstance(sTag, m.start() - offset);
-      styleAttribute(sTag, nextTag);
-      tempStack.push(nextTag);
+      tInstance = new TagInstance(sTag, m.start() - offset);
+      styleAttribute(sTag, tInstance);
+      tempStack.push(tInstance);
     }
-    return nextTag;
+    return tInstance;
   }
 
   private void styleAttribute(String sTag, TagInstance t) {
