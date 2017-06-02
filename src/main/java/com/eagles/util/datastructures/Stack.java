@@ -40,6 +40,25 @@ public class Stack<ITEM> implements Iterable<ITEM> {
     return new StackIterator();
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (!(o instanceof  Stack))
+      return false;
+
+    Stack<ITEM> other = (Stack<ITEM>) o;
+    if (!first.content.equals(other.first.content))
+      return false;
+    if (size != other.size)
+      return false;
+    Iterator it = iterator();
+    Iterator oIt = other.iterator();
+    while (it.hasNext()) {
+      if (!it.next().equals(oIt.next()))
+        return false;
+    }
+    return true;
+  }
+
 
   private class Node {
 

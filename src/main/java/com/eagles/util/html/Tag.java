@@ -1,103 +1,88 @@
 package com.eagles.util.html;
 
-import java.util.LinkedList;
-import java.util.List;
-
 /**
  * Created by Alan Mantoux.
  */
-public class Tag {
+public enum Tag {
+  P("p"), STRONG("strong"), EM("em"), BR("br", true), A("a");
 
-  private static final String OUT_OF_RANGE =
-    "rangeFrom and rangeTo must both be greater or equal than 0";
-  private static final String UNRECOGNIZED = " is not a recognized tag";
-  private TagName              tagName;
-  private List<StyleAttribute> styleAttributes;
-  private int                  rangeFrom;
-  private int                  rangeTo;
 
-  public Tag(String sTagName, int rangeFrom, int rangeTo) {
+  String string;
+  boolean isSelfClosing = false;
 
-    if (sTagName == null || sTagName.trim().isEmpty())
-      throw new NullPointerException("Tag string cannot be null or empty");
+  Tag(String string) {
+    this.string = string;
+  }
 
-    if (rangeFrom < 0 || rangeTo < 0)
-      throw new IllegalArgumentException(OUT_OF_RANGE);
+  Tag(String string, boolean isSelfClosing) {
+    this.string = string;
+    this.isSelfClosing = isSelfClosing;
+  }
 
-    TagName locTagName = TagName.isTag(sTagName);
-    if (locTagName == null)
-      throw new IllegalArgumentException(sTagName + UNRECOGNIZED);
-
-    this.tagName = locTagName;
-    this.rangeFrom = rangeFrom;
-    if (tagName.isSelfClosing) {
-      this.rangeTo = this.rangeFrom;
-      this.styleAttributes = null;
-      return;
+  public static Tag isTag(String input) {
+    String sTagName = prepareString(input);
+    for (Tag t : Tag.values()) {
+      if (t.string.equals(sTagName))
+        return t;
     }
-    this.rangeTo = rangeTo;
-    this.styleAttributes = new LinkedList<>();
+    return null;
   }
 
-  public Tag(String sTagName, int rangeFrom) {
-
-    if (rangeFrom < 0)
-      throw new IllegalArgumentException(OUT_OF_RANGE);
-
-    TagName locTagName = TagName.isTag(sTagName);
-    if (locTagName == null)
-      throw new IllegalArgumentException(sTagName + UNRECOGNIZED);
-
-    this.tagName = locTagName;
-    this.rangeFrom = rangeFrom;
-    if (locTagName.isSelfClosing)
-      this.rangeTo = rangeFrom;
-    this.styleAttributes = new LinkedList<>();
-  }
-
-  public void setRangeTo(int to) {
-    rangeTo = to;
-  }
-
-  public String openingString() {
-    StringBuilder openingString = new StringBuilder("<" + tagName().toString());
-    if (!styleAttributes.isEmpty()) {
-      openingString.append(" style=\"{");
-      for (StyleAttribute s : styleAttributes) {
-        openingString.append(s.toString()).append(";");
-      }
-      openingString.append("}\"");
+  public static String prepareString(String in) {
+    int indexSpace = in.indexOf(' ');
+    boolean hasAtribute = indexSpace >= 0;
+    if (in.charAt(1) != '/') {
+      return in.substring(1, hasAtribute ? indexSpace : in.indexOf('>'));
     }
-    return openingString.append(">").toString();
+    return in.substring(2, hasAtribute ? indexSpace : in.indexOf('>'));
   }
 
-  public TagName tagName() {
-    return tagName;
+  public static String getRegex() {
+    StringBuilder sbRegex = new StringBuilder();
+    sbRegex.append("</?(");
+    for (Tag t : Tag.values()) {
+      sbRegex.append(t.string).append("|");
+    }
+    sbRegex.deleteCharAt(sbRegex.length() - 1);
+    sbRegex.append(")\\s?(").append(StyleAttribute.ATTR_REGEX).append(")?>");
+    return sbRegex.toString();
+  }
+
+  public static String getRegexClosing() {
+    StringBuilder sbRegex = new StringBuilder();
+    for (Tag t : Tag.values()) {
+      sbRegex.append("</").append(t.string).append('>').append('|');
+    }
+    sbRegex.deleteCharAt(sbRegex.length() - 1);
+    return sbRegex.toString();
+  }
+
+  public static String getRegexOpening() {
+    StringBuilder sbRegex = new StringBuilder();
+    sbRegex.append("<(");
+    for (Tag t : Tag.values()) {
+      sbRegex.append(t.string).append("|");
+    }
+    sbRegex.deleteCharAt(sbRegex.length() - 1);
+    sbRegex.append(")\\s?(").append(StyleAttribute.ATTR_REGEX).append(")?>");
+    return sbRegex.toString();
   }
 
   public String closingString() {
-    return tagName().closingString();
+    if (isSelfClosing)
+      return openingString();
+    return "</" + toString() + ">";
+  }
+
+  public String openingString() {
+    return "<" + toString() + ">";
   }
 
   @Override
   public String toString() {
-    return tagName().toString() + "; " + from() + "; " + to() + "\n" + styleAttributes;
+    return string;
   }
 
-  public int from() {
-    return rangeFrom;
+  public static void main(String[] args) {
   }
-
-  public int to() {
-    return rangeTo;
-  }
-
-  public void addStyleAttribute(StyleAttribute s) {
-    styleAttributes.add(s);
-  }
-
-  public List<StyleAttribute> getStyleAttribute() {
-    return styleAttributes;
-  }
-
 }
