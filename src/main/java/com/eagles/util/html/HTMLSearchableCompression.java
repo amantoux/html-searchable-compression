@@ -6,31 +6,32 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * TODO : Support style attributes
  * TODO : Support '<' & '>' in plain text
  * Created by Alan Mantoux.
  */
-public class HTMLSearchCompressor {
+public class HTMLSearchableCompression {
 
   private Stack<Tag> tags;
   private Stack<Tag> selfClosings;
   private String     plainText;
 
-  public HTMLSearchCompressor() {
+  public HTMLSearchableCompression() {
     super();
     this.tags = new Stack<>();
     this.selfClosings = new Stack<>();
   }
 
   public static void main(String[] args) {
-    HTMLSearchCompressor parser = new HTMLSearchCompressor();
+    HTMLSearchableCompression parser = new HTMLSearchableCompression();
     long start, end;
-    String toEncode = "This is... <br><strong>REALLY <em>REALLY</em></strong><p style=\"{font-color:red;font-size:10em;}\">good</p>";
+    String toEncode =
+      "This is... <br><strong>REALLY <em>REALLY</em></strong><p style=\"{font-color:red;font-size:10em;}\"><em>good</em></p>";
     start = System.currentTimeMillis();
     parser.encode(toEncode);
     end = System.currentTimeMillis();
     long sizeInit = toEncode.length();
-    long sizeEnd = parser.plainText.length() + parser.selfClosings.size() + parser.tags.size();
+    long sizeEnd =
+      parser.plainText.length() + parser.selfClosings.size() * 3 + parser.tags.size() * 3;
     double ratio = sizeEnd * 100. / sizeInit;
     System.out.printf("Compression ratio : %2.2f%%%n", ratio);
     System.out.println("---- encoding ----");

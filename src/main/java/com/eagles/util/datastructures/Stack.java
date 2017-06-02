@@ -17,43 +17,10 @@ public class Stack<ITEM> implements Iterable<ITEM> {
     size = 0;
   }
 
-  public void push(ITEM element) {
-    if (!isEmpty()) {
-      Node oldFirst = first;
-      first = new Node(element, oldFirst);
-    } else {
-      addToEmptyList(element);
-    }
-    size++;
-  }
-
-  private void addToEmptyList(ITEM element) {
-    first = new Node(element, null);
-  }
-
-  public ITEM pop() {
-    if (!isEmpty()) {
-      ITEM popped = first.content;
-      first = first.next;
-      size--;
-      return popped;
-    } else {
-      return null;
-    }
-  }
-
   public ITEM peek() {
     if (first == null)
       return null;
     return first.content;
-  }
-
-  public boolean isEmpty() {
-    return size == 0;
-  }
-
-  public int size() {
-    return size;
   }
 
   @Override
@@ -61,17 +28,18 @@ public class Stack<ITEM> implements Iterable<ITEM> {
     StringBuilder stackString = new StringBuilder();
     Iterator<ITEM> it = this.iterator();
     stackString.append("Stack elements:\n");
-    while(it.hasNext()) {
+    while (it.hasNext()) {
       stackString.append(it.next().toString());
       stackString.append("\n");
     }
-    return stackString.deleteCharAt(stackString.length()-1).toString();
+    return stackString.deleteCharAt(stackString.length() - 1).toString();
   }
 
   @Override
   public Iterator<ITEM> iterator() {
     return new StackIterator();
   }
+
 
   private class Node {
 
@@ -143,6 +111,39 @@ public class Stack<ITEM> implements Iterable<ITEM> {
     end = System.currentTimeMillis();
     System.out.println(end - start + "ms to dequeue");
     System.out.println("Size is " + stack.size());
+  }
+
+  public void push(ITEM element) {
+    if (!isEmpty()) {
+      Node oldFirst = first;
+      first = new Node(element, oldFirst);
+    } else {
+      addToEmptyList(element);
+    }
+    size++;
+  }
+
+  private void addToEmptyList(ITEM element) {
+    first = new Node(element, null);
+  }
+
+  public boolean isEmpty() {
+    return size == 0;
+  }
+
+  public ITEM pop() {
+    if (!isEmpty()) {
+      ITEM popped = first.content;
+      first = first.next;
+      size--;
+      return popped;
+    } else {
+      return null;
+    }
+  }
+
+  public int size() {
+    return size;
   }
 
 }

@@ -4,20 +4,17 @@ package com.eagles.util.html;
  * Created by Alan Mantoux.
  */
 public class StyleAttribute {
-  public static final String ATTR_REGEX =
-    "style=\"\\{"
-      // Open any style instruction
-      + "("
-      // Style key
-      + "([a-z0-9]|-)*"
-      + "\\:"
-      // Style value
-      + "([a-z0-9]|\\s|-|\\)|\\(|,|#)*"
-      + "\\;"
-      // Close any style instruction
-      + ")*"
-      // Clos option style attribute
-      + "\\}\"";
+  public static final String ATTR_REGEX = "style=\"\\{"
+    // Open any style instruction
+    + "("
+    // Style key
+    + "([a-z0-9]|-)*" + "\\:"
+    // Style value
+    + "([a-z0-9]|\\s|-|\\)|\\(|,|#)*" + "\\;"
+    // Close any style instruction
+    + ")*"
+    // Clos option style attribute
+    + "\\}\"";
   private String key;
   private String value;
 
@@ -42,8 +39,11 @@ public class StyleAttribute {
     this.value = value;
   }
 
-  public String toString() {
-    return key + ":" + value;
+  @Override
+  public int hashCode() {
+    int result = key.hashCode();
+    result = 31 * result + value.hashCode();
+    return result;
   }
 
   @Override
@@ -58,10 +58,7 @@ public class StyleAttribute {
     return key.equals(that.key) && value.equals(that.value);
   }
 
-  @Override
-  public int hashCode() {
-    int result = key.hashCode();
-    result = 31 * result + value.hashCode();
-    return result;
+  public String toString() {
+    return key + ":" + value;
   }
 }

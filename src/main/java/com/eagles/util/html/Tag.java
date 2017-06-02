@@ -1,9 +1,7 @@
 package com.eagles.util.html;
 
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Created by Alan Mantoux.
@@ -65,12 +63,16 @@ public class Tag {
     StringBuilder openingString = new StringBuilder("<" + tagName().toString());
     if (!styleAttributes.isEmpty()) {
       openingString.append(" style=\"{");
-      for (StyleAttribute s : styleAttributes)  {
+      for (StyleAttribute s : styleAttributes) {
         openingString.append(s.toString()).append(";");
       }
       openingString.append("}\"");
     }
     return openingString.append(">").toString();
+  }
+
+  public TagName tagName() {
+    return tagName;
   }
 
   public String closingString() {
@@ -80,10 +82,6 @@ public class Tag {
   @Override
   public String toString() {
     return tagName().toString() + "; " + from() + "; " + to() + "\n" + styleAttributes;
-  }
-
-  public TagName tagName() {
-    return tagName;
   }
 
   public int from() {

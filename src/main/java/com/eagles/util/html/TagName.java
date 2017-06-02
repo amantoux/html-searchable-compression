@@ -43,7 +43,7 @@ public enum TagName {
     for (TagName t : TagName.values()) {
       sbRegex.append(t.string).append("|");
     }
-    sbRegex.deleteCharAt(sbRegex.length()-1);
+    sbRegex.deleteCharAt(sbRegex.length() - 1);
     sbRegex.append(")\\s?(").append(StyleAttribute.ATTR_REGEX).append(")?>");
     return sbRegex.toString();
   }
@@ -63,7 +63,7 @@ public enum TagName {
     for (TagName t : TagName.values()) {
       sbRegex.append(t.string).append("|");
     }
-    sbRegex.deleteCharAt(sbRegex.length()-1);
+    sbRegex.deleteCharAt(sbRegex.length() - 1);
     sbRegex.append(")\\s?(").append(StyleAttribute.ATTR_REGEX).append(")?>");
     return sbRegex.toString();
   }

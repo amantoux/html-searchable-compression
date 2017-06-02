@@ -13,43 +13,10 @@ public class Queue<Item> implements Iterable<Item> {
   private Node last  = null;
   private int  size  = 0;
 
-  public void enqueue(Item element) {
-    if (!isEmpty()) {
-      last.next = new Node(element, null);
-      last = last.next;
-    } else {
-      addToEmptyList(element);
-    }
-    size++;
-  }
-
-  private void addToEmptyList(Item element) {
-    first = new Node(element, null);
-    last = first;
-  }
-
-  public Item dequeue() {
-    if (!isEmpty()) {
-      Item element = first.content;
-      first = first.next;
-      size--;
-      return element;
-    } else {
-      return null;
-    }
-  }
-
-  public boolean isEmpty() {
-    return size == 0;
-  }
-
-  public int size() {
-    return size;
-  }
-
   public Iterator<Item> iterator() {
     return new QueueIterator();
   }
+
 
   private class Node {
 
@@ -123,6 +90,40 @@ public class Queue<Item> implements Iterable<Item> {
     end = System.currentTimeMillis();
     System.out.println(end - start + "ms to dequeue");
     System.out.println("Size is " + q.size());
+  }
+
+  public void enqueue(Item element) {
+    if (!isEmpty()) {
+      last.next = new Node(element, null);
+      last = last.next;
+    } else {
+      addToEmptyList(element);
+    }
+    size++;
+  }
+
+  private void addToEmptyList(Item element) {
+    first = new Node(element, null);
+    last = first;
+  }
+
+  public boolean isEmpty() {
+    return size == 0;
+  }
+
+  public Item dequeue() {
+    if (!isEmpty()) {
+      Item element = first.content;
+      first = first.next;
+      size--;
+      return element;
+    } else {
+      return null;
+    }
+  }
+
+  public int size() {
+    return size;
   }
 
 }

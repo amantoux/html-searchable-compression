@@ -16,13 +16,6 @@ public class AccumTST<V> {
 
   private Node<V> root;
 
-
-  private static class Node<V> {
-    private List<V> val;
-    private char    c;
-    private Node<V> left, mid, right;
-  }
-
   public void put(String key, V val) {
     key = key.toLowerCase();
     root = put(root, key, val, 0);
@@ -105,6 +98,13 @@ public class AccumTST<V> {
     collect(x.mid, prefix.append(x.c), l);
     prefix.deleteCharAt(prefix.length() - 1);
     collect(x.right, prefix, l);
+  }
+
+
+  private static class Node<V> {
+    private List<V> val;
+    private char    c;
+    private Node<V> left, mid, right;
   }
 
 

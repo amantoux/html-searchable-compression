@@ -17,16 +17,6 @@ public class MyLinkedList<Item> implements Iterable<Item> {
   private Node last  = null;
   private int  size  = 0;
 
-  public void addLast(Item element) {
-    if (!isEmpty()) {
-      last.next = new Node(element, last, null);
-      last = last.next;
-    } else {
-      addToEmptyList(element);
-    }
-    size++;
-  }
-
   public void addFirst(Item element) {
     if (!isEmpty()) {
       first.previous = new Node(element, null, first);
@@ -42,16 +32,8 @@ public class MyLinkedList<Item> implements Iterable<Item> {
     last = first;
   }
 
-  public Item removeLast() {
-    if (!isEmpty()) {
-      Item removed = last.content;
-      last = last.previous;
-      if (last != null)
-        last.next = null;
-      size--;
-      return removed;
-    }
-    return null;
+  public boolean isEmpty() {
+    return size == 0;
   }
 
   public Item removeFirst() {
@@ -66,17 +48,10 @@ public class MyLinkedList<Item> implements Iterable<Item> {
     return null;
   }
 
-  public boolean isEmpty() {
-    return size == 0;
-  }
-
-  public int size() {
-    return size;
-  }
-
   public Iterator<Item> iterator() {
     return new ListIterator();
   }
+
 
   private class Node {
 
@@ -154,6 +129,32 @@ public class MyLinkedList<Item> implements Iterable<Item> {
     System.out.println(end - start + "ms to remove elements");
     System.out.println("Last element is " + list.last + " and getSize is " + list.size());
     s.nextLine();
+  }
+
+  public void addLast(Item element) {
+    if (!isEmpty()) {
+      last.next = new Node(element, last, null);
+      last = last.next;
+    } else {
+      addToEmptyList(element);
+    }
+    size++;
+  }
+
+  public Item removeLast() {
+    if (!isEmpty()) {
+      Item removed = last.content;
+      last = last.previous;
+      if (last != null)
+        last.next = null;
+      size--;
+      return removed;
+    }
+    return null;
+  }
+
+  public int size() {
+    return size;
   }
 
 }
