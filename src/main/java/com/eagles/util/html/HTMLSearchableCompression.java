@@ -1,7 +1,12 @@
 package com.eagles.util.html;
 
+import com.eagles.util.datastructures.InsertStringBuilder;
 import com.eagles.util.datastructures.Stack;
 
+import javax.swing.text.html.HTML;
+import java.text.DecimalFormat;
+import java.util.Iterator;
+import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,41 +39,68 @@ public class HTMLSearchableCompression {
     return cloneTags;
   }
 
+  public long computeSize() {
+    long size = plainText.length();
+    for (TagInstance t : tags) {
+      size += 32 * 2 + t.tagName().toString().length();
+      for (StyleAttribute s : t.getStyleAttribute()) {
+        size += s.getKey().length() + s.getValue().length();
+      }
+    }
+    for(TagInstance t : selfClosings) {
+      size += 32 * 2 + t.tagName().toString().length();
+    }
+    return size;
+  }
+
   public static void main(String[] args) {
     HTMLSearchableCompression parser = new HTMLSearchableCompression();
+    Scanner s = new Scanner(System.in);
     long start, end;
     String seed =
       "This is... <br><strong>REALLY <em>REALLY</em></strong><p style=\"{font-color:red;font-size:10em;}\"><em>good</em></p>";
     StringBuilder sb = new StringBuilder();
-    for (int i = 0; i < 1140; i++) {
+    int nbRepet = 1_000_000;
+    for (int i = 0; i < nbRepet; i++) {
       sb.append(seed);
     }
-    System.out.println(seed.length());
+    System.out.println("Init string length : " + seed.length());
+    System.out.println("Number of repetitions : " + nbRepet);
+    System.out.println(
+      "Estimated size of file : " + seed.length() * nbRepet * 16 /* char size*/ / 1024 / 1024 + "Mo");
     String toEncode = sb.toString();
+    System.out.println("Hit enter to start");
+    s.nextLine();
+
     start = System.currentTimeMillis();
     parser.encode(toEncode);
     end = System.currentTimeMillis();
-    int sizeInit = toEncode.length();
-    int sizeEnd =
-      parser.plainText.length() + parser.selfClosings.size() * 3 + ("font-color:red;font-size:10em;".length() - 4)*1000 + parser.tags.size() * 3;
+
+    long sizeInit = toEncode.length() * 16;
+    long sizeEnd = parser.computeSize();
     double ratio = sizeEnd * 100. / sizeInit;
+
+    DecimalFormat myFormatter = new DecimalFormat("###,###,###");
+    String sSizeInit = myFormatter.format(sizeInit);
+    String sSizeEnd = myFormatter.format(sizeEnd);
     System.out.printf("Compression ratio : %2.2f%%%n", ratio);
+    System.out.println("Start size : " +sSizeInit + " bits");
+    System.out.println("End size : " +sSizeEnd + " bits\n");
+
     System.out.println("---- encoding ----");
     System.out.println("Encoded in " + (end - start) + "ms");
-    /*System.out.println(parser.plainText);
-    System.out.println(parser.tags);
-    System.out.println(parser.selfClosings);*/
     System.out.println("");
+
+    HTMLSearchableCompression decodeParser = new HTMLSearchableCompression();
     start = System.currentTimeMillis();
-    String out = parser.decode(parser.plainText, parser.tags, parser.selfClosings);
+    String out = decodeParser.decode(parser.plainText, parser.tags, parser.selfClosings);
     end = System.currentTimeMillis();
+
     System.out.println("---- decoding ----");
     System.out.println("Decoded in " + (end - start) + "ms");
     System.out.println("");
     System.out.println("---- diff ----");
     System.out.println(toEncode.equals(out) ? "OK" : "NOK");
-    /*System.out.println(toEncode);
-    System.out.println(out);*/
     if (!toEncode.equals(out)) {
       System.out.println(toEncode);
       System.out.println(out);
@@ -97,7 +129,7 @@ public class HTMLSearchableCompression {
     this.selfClosings = sClosings;
     this.plainText = plain;
 
-    StringBuilder html = new StringBuilder();
+    InsertStringBuilder html = new InsertStringBuilder();
     Stack<TagInstance> ts = new Stack<>();
     int index = plain.length();
     TagInstance t;
@@ -107,7 +139,7 @@ public class HTMLSearchableCompression {
 
     /* Rebase input with included self closing tags */
     index = plainText.length();
-    html = new StringBuilder();
+    html = new InsertStringBuilder();
 
     /* Process tags from the stack */
     while (tags.peek() != null) {
@@ -123,36 +155,36 @@ public class HTMLSearchableCompression {
     while (ts.peek() != null) {
       index = processOpeningTags(html, ts, index);
     }
-    return html.insert(0, plainText.substring(0, index)).toString();
+    return html.insertFirst(plainText.substring(0, index)).toString();
   }
 
-  private void processSelfClosingTags(Stack<TagInstance> sClosings, StringBuilder html, int index) {
+  private void processSelfClosingTags(Stack<TagInstance> sClosings,
+                                      InsertStringBuilder html,
+                                      int index) {
     TagInstance t;
     int idx = index;
     while (sClosings.peek() != null) {
       t = sClosings.pop();
-      html.insert(0, plainText.substring(t.to(), idx));
-      html.insert(0, t.tagName().openingString());
+      // add concat is insert as it is faster than two inserts...
+      html.insertFirst(t.tagName().openingString() + plainText.substring(t.to(), idx));
       idx = t.from();
     }
-    html.insert(0, plainText.substring(0, idx));
+    html.insertFirst(plainText.substring(0, idx));
     plainText = html.toString();
   }
 
-  private int processClosingTags(StringBuilder html, Stack<TagInstance> ts, int index) {
+  private int processClosingTags(InsertStringBuilder html, Stack<TagInstance> ts, int index) {
     TagInstance t = tags.pop();
     String s = plainText.substring(t.to(), index);
-    html.insert(0, s);
-    html.insert(0, t.closingString());
+    html.insertFirst(t.closingString() + s);
     ts.push(t);
     return t.to();
   }
 
-  private int processOpeningTags(StringBuilder html, Stack<TagInstance> ts, int index) {
+  private int processOpeningTags(InsertStringBuilder html, Stack<TagInstance> ts, int index) {
     TagInstance t = ts.pop();
     String s = plainText.substring(t.from(), index);
-    html.insert(0, s);
-    html.insert(0, t.openingString());
+    html.insertFirst(t.openingString() + s);
     return t.from();
   }
 
@@ -198,7 +230,10 @@ public class HTMLSearchableCompression {
     plainText = sbPlainText.append(in.substring(nextToParseIndex)).toString();
   }
 
-  private TagInstance getTagClosing(Matcher m, Stack<TagInstance> tempStack, int offset, String sTag) {
+  private TagInstance getTagClosing(Matcher m,
+                                    Stack<TagInstance> tempStack,
+                                    int offset,
+                                    String sTag) {
     TagInstance tInstance;
     tInstance = tempStack.pop();
     String sTagName = Tag.prepareString(sTag);
