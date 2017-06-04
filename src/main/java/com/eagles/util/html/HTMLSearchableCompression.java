@@ -40,15 +40,15 @@ public class HTMLSearchableCompression {
   }
 
   public long computeSize() {
-    long size = plainText.length();
+    long size = plainText.length() * 16;
     for (TagInstance t : tags) {
-      size += 32 * 2 + t.tagName().toString().length();
+      size += 32 * 2 + t.tagName().toString().length() * 16;
       for (StyleAttribute s : t.getStyleAttribute()) {
-        size += s.getKey().length() + s.getValue().length();
+        size += (s.getKey().length() + s.getValue().length()) * 16;
       }
     }
     for(TagInstance t : selfClosings) {
-      size += 32 * 2 + t.tagName().toString().length();
+      size += 32 * 2 + t.tagName().toString().length() * 16;
     }
     return size;
   }
@@ -60,7 +60,7 @@ public class HTMLSearchableCompression {
     String seed =
       "This is... <br><strong>REALLY <em>REALLY</em></strong><p style=\"{font-color:red;font-size:10em;}\"><em>good</em></p>";
     StringBuilder sb = new StringBuilder();
-    int nbRepet = 1_000_000;
+    int nbRepet = 100_000;
     for (int i = 0; i < nbRepet; i++) {
       sb.append(seed);
     }
