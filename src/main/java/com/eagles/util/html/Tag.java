@@ -4,7 +4,8 @@ package com.eagles.util.html;
  * Created by Alan Mantoux.
  */
 public enum Tag {
-  P("p"), STRONG("strong"), EM("em"), BR("br", true), A("a");
+  P("p"), STRONG("strong"), EM("em"), BR("br", true), A("a"), DIV("div"), SPAN("span"), H1(
+    "h1"), H2("h2"), H3("h3");
 
 
   String string;
@@ -30,21 +31,43 @@ public enum Tag {
 
   public static String prepareString(String in) {
     int indexSpace = in.indexOf(' ');
-    boolean hasAtribute = indexSpace >= 0;
+    boolean hasAttribute = indexSpace >= 0;
     if (in.charAt(1) != '/') {
-      return in.substring(1, hasAtribute ? indexSpace : in.indexOf('>'));
+      return in.substring(1, hasAttribute ? indexSpace : in.indexOf('>'));
     }
-    return in.substring(2, hasAtribute ? indexSpace : in.indexOf('>'));
+    return in.substring(2, hasAttribute ? indexSpace : in.indexOf('>'));
+  }
+
+  public static void main(String[] args) {
+  }
+
+  public String closingString() {
+    if (isSelfClosing)
+      return openingString();
+    return "</" + toString() + ">";
+  }
+
+  public String openingString() {
+    return "<" + toString() + ">";
+  }
+
+  @Override
+  public String toString() {
+    return string;
   }
 
   public static String getRegex() {
     StringBuilder sbRegex = new StringBuilder();
+    String spaceStyleOpt = "(" + StyleAttribute.STYLE_REGEX + ")";
+    String spaceClassOpt = "(" + ClassAttribute.CLASS_REGEX + ")";
+
     sbRegex.append("</?(");
     for (Tag t : Tag.values()) {
       sbRegex.append(t.string).append("|");
     }
     sbRegex.deleteCharAt(sbRegex.length() - 1);
-    sbRegex.append(")\\s?(").append(StyleAttribute.ATTR_REGEX).append(")?>");
+    sbRegex.append(")(\\s(class|style)=\"[^\"]+\")*");
+    sbRegex.append(">");
     return sbRegex.toString();
   }
 
@@ -64,25 +87,7 @@ public enum Tag {
       sbRegex.append(t.string).append("|");
     }
     sbRegex.deleteCharAt(sbRegex.length() - 1);
-    sbRegex.append(")\\s?(").append(StyleAttribute.ATTR_REGEX).append(")?>");
+    sbRegex.append(")\\s?(").append(Attribute.ATTR_REGEX).append(")?>");
     return sbRegex.toString();
-  }
-
-  public String closingString() {
-    if (isSelfClosing)
-      return openingString();
-    return "</" + toString() + ">";
-  }
-
-  public String openingString() {
-    return "<" + toString() + ">";
-  }
-
-  @Override
-  public String toString() {
-    return string;
-  }
-
-  public static void main(String[] args) {
   }
 }

@@ -19,13 +19,6 @@ public class InsertStringBuilder {
       value = new char[16];
   }
 
-  /*
-    Position of the next character TO BE filled
-   */
-  private int offset() {
-    return value.length - size;
-  }
-
   public InsertStringBuilder insertFirst(String str) {
     if (str == null)
       return this;
@@ -41,6 +34,13 @@ public class InsertStringBuilder {
     // overflow-conscious code
     if (minimumCapacity - value.length > 0)
       expandCapacity(minimumCapacity);
+  }
+
+  /*
+    Position of the next character TO BE filled
+   */
+  private int offset() {
+    return value.length - size;
   }
 
   /**

@@ -3,9 +3,7 @@ package com.eagles.util.html;
 import com.eagles.util.datastructures.InsertStringBuilder;
 import com.eagles.util.datastructures.Stack;
 
-import javax.swing.text.html.HTML;
 import java.text.DecimalFormat;
-import java.util.Iterator;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,48 +24,22 @@ public class HTMLSearchableCompression {
     this.selfClosings = new Stack<>();
   }
 
-  public Stack<TagInstance> getSelfClosings() {
-    Stack<TagInstance> tempTags = new Stack<>();
-    Stack<TagInstance> cloneTags = new Stack<>();
-    for (TagInstance t : selfClosings) {
-      tempTags.push(t);
-    }
-    for (TagInstance t : tempTags) {
-      cloneTags.push(t);
-    }
-
-    return cloneTags;
-  }
-
-  public long computeSize() {
-    long size = plainText.length() * 16;
-    for (TagInstance t : tags) {
-      size += 32 * 2 + t.tagName().toString().length() * 16;
-      for (StyleAttribute s : t.getStyleAttribute()) {
-        size += (s.getKey().length() + s.getValue().length()) * 16;
-      }
-    }
-    for(TagInstance t : selfClosings) {
-      size += 32 * 2 + t.tagName().toString().length() * 16;
-    }
-    return size;
-  }
-
   public static void main(String[] args) {
     HTMLSearchableCompression parser = new HTMLSearchableCompression();
     Scanner s = new Scanner(System.in);
     long start, end;
     String seed =
-      "This is... <br><strong>REALLY <em>REALLY</em></strong><p style=\"{font-color:red;font-size:10em;}\"><em>good</em></p>";
+      "<p>Alors?! on se la prend cette bière???</p><p>Je suis <strong>hyper</strong> saoulé...</p><p><span class=\"ql-size-large\" style=\"color: rgb(0, 138, 0);\">Vraiment?....</span></p><p><span class=\"ql-size-large\" style=\"color: rgb(230, 0, 0);\">Hein? re re quoi? ?</span></p><p><span class=\"ql-size-large\" style=\"color: rgb(102, 163, 224);\">Oui qyoi</span></p>";
     StringBuilder sb = new StringBuilder();
-    int nbRepet = 100_000;
+    int nbRepet = 1000;
     for (int i = 0; i < nbRepet; i++) {
       sb.append(seed);
     }
     System.out.println("Init string length : " + seed.length());
     System.out.println("Number of repetitions : " + nbRepet);
     System.out.println(
-      "Estimated size of file : " + seed.length() * nbRepet * 16 /* char size*/ / 1024 / 1024 + "Mo");
+      "Estimated size of file : " + seed.length() * nbRepet * 16 /* char size*/ / 1024 / 1024
+        + "Mo");
     String toEncode = sb.toString();
     System.out.println("Hit enter to start");
     s.nextLine();
@@ -76,7 +48,7 @@ public class HTMLSearchableCompression {
     parser.encode(toEncode);
     end = System.currentTimeMillis();
 
-    long sizeInit = toEncode.length() * 16;
+    long sizeInit = (long) (toEncode.length()) * 16;
     long sizeEnd = parser.computeSize();
     double ratio = sizeEnd * 100. / sizeInit;
 
@@ -84,8 +56,8 @@ public class HTMLSearchableCompression {
     String sSizeInit = myFormatter.format(sizeInit);
     String sSizeEnd = myFormatter.format(sizeEnd);
     System.out.printf("Compression ratio : %2.2f%%%n", ratio);
-    System.out.println("Start size : " +sSizeInit + " bits");
-    System.out.println("End size : " +sSizeEnd + " bits\n");
+    System.out.println("Start size : " + sSizeInit + " bits");
+    System.out.println("End size : " + sSizeEnd + " bits\n");
 
     System.out.println("---- encoding ----");
     System.out.println("Encoded in " + (end - start) + "ms");
@@ -107,21 +79,61 @@ public class HTMLSearchableCompression {
     }
   }
 
-  public String getPlainText() {
-    return plainText;
+  /*
+      Non-selfclosing tags are stored in a stack structure "tags"
+      Self closing tags are stored in a list structure "selfClosings"
+      Style attributes are stored within the tag instance
+   */
+  public void encode(String in) {
+    Pattern pattern = Pattern.compile(Tag.getRegex());
+    Matcher m = pattern.matcher(in);
+
+    /* Helper variables */
+    int nextToParseIndex = 0;
+    StringBuilder sbPlainText = new StringBuilder();
+    Stack<TagInstance> tempStack = new Stack<>(); // Structure to store opened tag not yet closed
+    int offset = 0; // offset for regular tags
+    int closingOffset = 0; // offset for closing tags
+
+    /* decoding algorithm */
+    while (m.find()) {
+
+      String sTag = in.substring(m.start(), m.end());
+      TagInstance tInstance;
+
+      if (sTag.charAt(1) != '/') {
+        tInstance = getTagOpening(m, tempStack, offset, closingOffset, sTag);
+      } else {
+        tInstance = getTagClosing(m, tempStack, offset, sTag);
+      }
+
+      sbPlainText.append(in.substring(nextToParseIndex, m.start()));
+      nextToParseIndex = m.start() + sTag.length();
+
+      if (!tInstance.tagName().isSelfClosing)
+        offset += sTag.length();
+      else
+        closingOffset += sTag.length();
+
+    }
+    plainText = sbPlainText.append(in.substring(nextToParseIndex)).toString();
   }
 
-  public Stack<TagInstance> getTags() {
-    Stack<TagInstance> tempTags = new Stack<>();
-    Stack<TagInstance> cloneTags = new Stack<>();
+  public long computeSize() {
+    long size = plainText.length() * 16;
     for (TagInstance t : tags) {
-      tempTags.push(t);
+      size += 32 * 2 + t.tagName().toString().length() * 16;
+      for (StyleAttribute s : t.getStyleAttributes()) {
+        size += (s.getKey().length() + s.getValue().length()) * 16;
+      }
+      for (ClassAttribute c : t.getClassAttributes()) {
+        size += (c.getValue().length()) * 16;
+      }
     }
-    for (TagInstance t : tempTags) {
-      cloneTags.push(t);
+    for (TagInstance t : selfClosings) {
+      size += 32 * 2 + t.tagName().toString().length() * 16;
     }
-
-    return cloneTags;
+    return size;
   }
 
   public String decode(String plain, Stack<TagInstance> inTags, Stack<TagInstance> sClosings) {
@@ -158,76 +170,23 @@ public class HTMLSearchableCompression {
     return html.insertFirst(plainText.substring(0, index)).toString();
   }
 
-  private void processSelfClosingTags(Stack<TagInstance> sClosings,
-                                      InsertStringBuilder html,
-                                      int index) {
-    TagInstance t;
-    int idx = index;
-    while (sClosings.peek() != null) {
-      t = sClosings.pop();
-      // add concat is insert as it is faster than two inserts...
-      html.insertFirst(t.tagName().openingString() + plainText.substring(t.to(), idx));
-      idx = t.from();
+  private TagInstance getTagOpening(Matcher m,
+                                    Stack<TagInstance> tempStack,
+                                    int offset,
+                                    int closingOffset,
+                                    String sTag) {
+    TagInstance tInstance;
+    Tag tName = Tag.isTag(sTag);
+    if (tName != null && tName.isSelfClosing) {
+      tInstance = new TagInstance(sTag, m.start() - closingOffset - offset);
+      findAttributes(sTag, tInstance);
+      selfClosings.push(tInstance);
+    } else {
+      tInstance = new TagInstance(sTag, m.start() - offset);
+      findAttributes(sTag, tInstance);
+      tempStack.push(tInstance);
     }
-    html.insertFirst(plainText.substring(0, idx));
-    plainText = html.toString();
-  }
-
-  private int processClosingTags(InsertStringBuilder html, Stack<TagInstance> ts, int index) {
-    TagInstance t = tags.pop();
-    String s = plainText.substring(t.to(), index);
-    html.insertFirst(t.closingString() + s);
-    ts.push(t);
-    return t.to();
-  }
-
-  private int processOpeningTags(InsertStringBuilder html, Stack<TagInstance> ts, int index) {
-    TagInstance t = ts.pop();
-    String s = plainText.substring(t.from(), index);
-    html.insertFirst(t.openingString() + s);
-    return t.from();
-  }
-
-  /*
-      Non-selfclosing tags are stored in a stack structure "tags"
-      Self closing tags are stored in a list structure "selfClosings"
-      Style attributes are stored within the tag instance
-   */
-  public void encode(String in) {
-    Pattern pattern = Pattern.compile(Tag.getRegex());
-    Matcher m = pattern.matcher(in);
-
-    /* Helper variables */
-    int nextToParseIndex = 0;
-    StringBuilder sbPlainText = new StringBuilder();
-    Stack<TagInstance> tempStack = new Stack<>(); // Structure to store opened tag not yet closed
-    int offset = 0; // offset for regular tags
-    int closingOffset = 0; // offset for closing tags
-
-    /* decoding algorithm */
-    while (m.find()) {
-
-      String sTag = in.substring(m.start(), m.end());
-      TagInstance tInstance = null;
-
-      if (sTag.matches(Tag.getRegexOpening())) {
-        tInstance = getTagOpening(m, tempStack, offset, closingOffset, sTag);
-      }
-
-      if (sTag.matches(Tag.getRegexClosing())) {
-        tInstance = getTagClosing(m, tempStack, offset, sTag);
-      }
-
-      sbPlainText.append(in.substring(nextToParseIndex, m.start()));
-      nextToParseIndex = m.start() + sTag.length();
-
-      if (tInstance == null || !tInstance.tagName().isSelfClosing)
-        offset += sTag.length();
-      else
-        closingOffset += sTag.length();
-
-    }
-    plainText = sbPlainText.append(in.substring(nextToParseIndex)).toString();
+    return tInstance;
   }
 
   private TagInstance getTagClosing(Matcher m,
@@ -247,37 +206,98 @@ public class HTMLSearchableCompression {
     return tInstance;
   }
 
-  private TagInstance getTagOpening(Matcher m,
-                                    Stack<TagInstance> tempStack,
-                                    int offset,
-                                    int closingOffset,
-                                    String sTag) {
-    TagInstance tInstance;
-    Tag tName = Tag.isTag(sTag);
-    if (tName != null && tName.isSelfClosing) {
-      tInstance = new TagInstance(sTag, m.start() - closingOffset - offset);
-      styleAttribute(sTag, tInstance);
-      selfClosings.push(tInstance);
-    } else {
-      tInstance = new TagInstance(sTag, m.start() - offset);
-      styleAttribute(sTag, tInstance);
-      tempStack.push(tInstance);
+  private void processSelfClosingTags(Stack<TagInstance> sClosings,
+                                      InsertStringBuilder html,
+                                      int index) {
+    TagInstance t;
+    int idx = index;
+    while (sClosings.peek() != null) {
+      t = sClosings.pop();
+      // add concat is insert as it is faster than two inserts...
+      html.insertFirst(t.tagName().openingString() + plainText.substring(t.to(), idx));
+      idx = t.from();
     }
-    return tInstance;
+    html.insertFirst(plainText.substring(0, idx));
+    plainText = html.toString();
   }
 
-  private void styleAttribute(String sTag, TagInstance t) {
-    Pattern p = Pattern.compile(StyleAttribute.ATTR_REGEX);
+  private int processOpeningTags(InsertStringBuilder html, Stack<TagInstance> ts, int index) {
+    TagInstance t = ts.pop();
+    String s = plainText.substring(t.from(), index);
+    html.insertFirst(t.openingString() + s);
+    return t.from();
+  }
+
+  private int processClosingTags(InsertStringBuilder html, Stack<TagInstance> ts, int index) {
+    TagInstance t = tags.pop();
+    String s = plainText.substring(t.to(), index);
+    html.insertFirst(t.closingString() + s);
+    ts.push(t);
+    return t.to();
+  }
+
+  private void findAttributes(String sTag, TagInstance t) {
+    Pattern p = Pattern.compile(
+      "(" + ClassAttribute.CLASS_REGEX + ")" + "|" + "(" + StyleAttribute.STYLE_REGEX + ")");
     Matcher m = p.matcher(sTag);
-    /* If there is a style attribute in the tag */
-    if (m.find()) {
-      /* Instantiate StyleAttribute class with style definition */
+    /* If there is a attribute in the tag */
+    while (m.find()) {
+      /* Instantiate Attribute class with style definition */
       String sAttr = sTag.substring(m.start(), m.end());
-      String sMap = sAttr.split("\\{")[1].split("\\}")[0];
-      for (String s : sMap.split("\\;")) {
-        String[] sKeyValue = s.split("\\:");
-        t.addStyleAttribute(new StyleAttribute(sKeyValue[0].trim(), sKeyValue[1].trim()));
+      if (sAttr.startsWith("class")) {
+        classAttribute(sAttr, t);
+      }
+      if (sAttr.startsWith("style")) {
+        styleAttribute(sAttr, t);
       }
     }
+  }
+
+  private void classAttribute(String sAttr, TagInstance t) {
+    String sSet = sAttr.split("\"")[1].split("\"")[0];
+    for (String s : sSet.split(" ")) {
+      // handle case "class1  class2" (double space)
+      if ("".equals(s.trim()))
+        continue;
+      t.addClassAttribute(new ClassAttribute(s));
+    }
+  }
+
+  private void styleAttribute(String sAttr, TagInstance t) {
+    String sMap = sAttr.split("\"(\\{)?")[1].split("(\\})?\"")[0];
+    for (String s : sMap.split("\\;")) {
+      String[] sKeyValue = s.split("\\:");
+      t.addStyleAttribute(new StyleAttribute(sKeyValue[0].trim(), sKeyValue[1].trim()));
+    }
+  }
+
+  public Stack<TagInstance> getSelfClosings() {
+    Stack<TagInstance> tempTags = new Stack<>();
+    Stack<TagInstance> cloneTags = new Stack<>();
+    for (TagInstance t : selfClosings) {
+      tempTags.push(t);
+    }
+    for (TagInstance t : tempTags) {
+      cloneTags.push(t);
+    }
+
+    return cloneTags;
+  }
+
+  public String getPlainText() {
+    return plainText;
+  }
+
+  public Stack<TagInstance> getTags() {
+    Stack<TagInstance> tempTags = new Stack<>();
+    Stack<TagInstance> cloneTags = new Stack<>();
+    for (TagInstance t : tags) {
+      tempTags.push(t);
+    }
+    for (TagInstance t : tempTags) {
+      cloneTags.push(t);
+    }
+
+    return cloneTags;
   }
 }

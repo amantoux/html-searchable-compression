@@ -4,7 +4,7 @@ package com.eagles.util.html;
  * Created by Alan Mantoux.
  */
 public class StyleAttribute {
-  public static final String ATTR_REGEX = "style=\"\\{"
+  public static final String STYLE_REGEX = "style=\"(\\{)?"
     // Open any style instruction
     + "("
     // Style key
@@ -14,7 +14,7 @@ public class StyleAttribute {
     // Close any style instruction
     + ")*"
     // Clos option style attribute
-    + "\\}\"";
+    + "(\\})?\"";
   private String key;
   private String value;
 
