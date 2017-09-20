@@ -1,13 +1,12 @@
 package com.eagles.util.datastructures;
 
-import java.util.Iterator;
-import java.util.Scanner;
+import java.util.*;
 
 /**
- * @param <ITEM>
+ * @param <I>
  * @author Alan Mantoux
  */
-public class Stack<ITEM> implements Iterable<ITEM> {
+public class Stack<I> implements Iterable<I> {
 
   private Node first;
   private int  size;
@@ -17,7 +16,7 @@ public class Stack<ITEM> implements Iterable<ITEM> {
     size = 0;
   }
 
-  public ITEM peek() {
+  public I peek() {
     if (first == null)
       return null;
     return first.content;
@@ -26,7 +25,7 @@ public class Stack<ITEM> implements Iterable<ITEM> {
   @Override
   public String toString() {
     StringBuilder stackString = new StringBuilder();
-    Iterator<ITEM> it = this.iterator();
+    Iterator<I> it = this.iterator();
     stackString.append("Stack elements:\n");
     while (it.hasNext()) {
       stackString.append(it.next().toString());
@@ -36,36 +35,17 @@ public class Stack<ITEM> implements Iterable<ITEM> {
   }
 
   @Override
-  public Iterator<ITEM> iterator() {
+  public Iterator<I> iterator() {
     return new StackIterator();
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (!(o instanceof  Stack))
-      return false;
-
-    Stack<ITEM> other = (Stack<ITEM>) o;
-    if (!first.content.equals(other.first.content))
-      return false;
-    if (size != other.size)
-      return false;
-    Iterator it = iterator();
-    Iterator oIt = other.iterator();
-    while (it.hasNext()) {
-      if (!it.next().equals(oIt.next()))
-        return false;
-    }
-    return true;
   }
 
 
   private class Node {
 
-    ITEM content;
+    I    content;
     Node next;
 
-    private Node(ITEM content, Node next) {
+    private Node(I content, Node next) {
       this.content = content;
       this.next = next;
     }
@@ -73,7 +53,7 @@ public class Stack<ITEM> implements Iterable<ITEM> {
   }
 
 
-  private class StackIterator implements Iterator<ITEM> {
+  private class StackIterator implements Iterator<I> {
 
     private Node currentNode = first;
 
@@ -83,8 +63,10 @@ public class Stack<ITEM> implements Iterable<ITEM> {
     }
 
     @Override
-    public ITEM next() {
-      ITEM next = currentNode.content;
+    public I next() {
+      if (!hasNext())
+        throw new NoSuchElementException();
+      I next = currentNode.content;
       currentNode = currentNode.next;
       return next;
     }
@@ -132,7 +114,7 @@ public class Stack<ITEM> implements Iterable<ITEM> {
     System.out.println("Size is " + stack.size());
   }
 
-  public void push(ITEM element) {
+  public void push(I element) {
     if (!isEmpty()) {
       Node oldFirst = first;
       first = new Node(element, oldFirst);
@@ -142,7 +124,7 @@ public class Stack<ITEM> implements Iterable<ITEM> {
     size++;
   }
 
-  private void addToEmptyList(ITEM element) {
+  private void addToEmptyList(I element) {
     first = new Node(element, null);
   }
 
@@ -150,9 +132,9 @@ public class Stack<ITEM> implements Iterable<ITEM> {
     return size == 0;
   }
 
-  public ITEM pop() {
+  public I pop() {
     if (!isEmpty()) {
-      ITEM popped = first.content;
+      I popped = first.content;
       first = first.next;
       size--;
       return popped;
