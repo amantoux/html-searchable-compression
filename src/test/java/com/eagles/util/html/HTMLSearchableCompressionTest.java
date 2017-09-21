@@ -1,9 +1,14 @@
 package com.eagles.util.html;
 
-import com.eagles.util.datastructures.Stack;
+import com.plato.util.html.HTMLSearchableCompression;
+import com.plato.util.html.StyleAttribute;
+import com.plato.util.html.TagInstance;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.Deque;
+import java.util.LinkedList;
 
 import static org.junit.Assert.assertEquals;
 
@@ -13,10 +18,10 @@ import static org.junit.Assert.assertEquals;
 public class HTMLSearchableCompressionTest {
 
   public static String             toEncode     =
-    "This is... <br><strong>REALLY <em>REALLY</em></strong><p style=\"{font-color:red;font-size:10em;}\"><em>good</em></p>123";
+    "This is... <br><strong>REALLY <em>REALLY</em></strong><p style=\"font-color:red;font-size:10em;\"><em>good</em></p>123";
   public static String             plainText    = "This is... REALLY REALLYgood123";
-  public static Stack<TagInstance> tags         = new Stack<>();
-  public static Stack<TagInstance> selfClosings = new Stack<>();
+  public static Deque<TagInstance> tags         = new LinkedList<>();
+  public static Deque<TagInstance> selfClosings = new LinkedList<>();
   public static HTMLSearchableCompression parser;
 
   @BeforeClass
@@ -26,8 +31,8 @@ public class HTMLSearchableCompressionTest {
 
   @Before
   public void init() {
-    tags = new Stack<>();
-    selfClosings = new Stack<>();
+    tags = new LinkedList<>();
+    selfClosings = new LinkedList<>();
     parser = new HTMLSearchableCompression();
     tags.push(new TagInstance("<em>", 22, 28));
     tags.push(new TagInstance("<strong>", 15, 28));

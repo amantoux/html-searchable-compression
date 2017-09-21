@@ -1,9 +1,10 @@
-package com.eagles.util.html;
+package com.plato.util.html;
 
-import com.eagles.util.datastructures.InsertStringBuilder;
-import com.eagles.util.datastructures.Stack;
+import com.plato.util.datastructures.InsertStringBuilder;
 
 import java.text.DecimalFormat;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -14,14 +15,14 @@ import java.util.regex.Pattern;
  */
 public class HTMLSearchableCompression {
 
-  private Stack<TagInstance> tags;
-  private Stack<TagInstance> selfClosings;
+  private Deque<TagInstance> tags;
+  private Deque<TagInstance> selfClosings;
   private String             plainText;
 
   public HTMLSearchableCompression() {
     super();
-    this.tags = new Stack<>();
-    this.selfClosings = new Stack<>();
+    this.tags = new LinkedList<>();
+    this.selfClosings = new LinkedList<>();
   }
 
   public static void main(String[] args) {
@@ -31,7 +32,7 @@ public class HTMLSearchableCompression {
     String seed =
       "<p>Alors?! on se la prend cette bière???</p><p>Je suis <strong>hyper</strong> saoulé...</p><p><span class=\"ql-size-large\" style=\"color: rgb(0, 138, 0);\">Vraiment?....</span></p><p><span class=\"ql-size-large\" style=\"color: rgb(230, 0, 0);\">Hein? re re quoi? ?</span></p><p><span class=\"ql-size-large\" style=\"color: rgb(102, 163, 224);\">Oui qyoi</span></p>";
     StringBuilder sb = new StringBuilder();
-    int nbRepet = 1000;
+    int nbRepet = 1;
     for (int i = 0; i < nbRepet; i++) {
       sb.append(seed);
     }
@@ -91,7 +92,7 @@ public class HTMLSearchableCompression {
     /* Helper variables */
     int nextToParseIndex = 0;
     StringBuilder sbPlainText = new StringBuilder();
-    Stack<TagInstance> tempStack = new Stack<>(); // Structure to store opened tag not yet closed
+    Deque<TagInstance> tempStack = new LinkedList<>(); // Structure to store opened tag not yet closed
     int offset = 0; // offset for regular tags
     int closingOffset = 0; // offset for closing tags
 
@@ -136,13 +137,13 @@ public class HTMLSearchableCompression {
     return size;
   }
 
-  public String decode(String plain, Stack<TagInstance> inTags, Stack<TagInstance> sClosings) {
+  public String decode(String plain, Deque<TagInstance> inTags, Deque<TagInstance> sClosings) {
     this.tags = inTags;
     this.selfClosings = sClosings;
     this.plainText = plain;
 
     InsertStringBuilder html = new InsertStringBuilder();
-    Stack<TagInstance> ts = new Stack<>();
+    Deque<TagInstance> ts = new LinkedList<>();
     int index = plain.length();
     TagInstance t;
 
@@ -171,7 +172,7 @@ public class HTMLSearchableCompression {
   }
 
   private TagInstance getTagOpening(Matcher m,
-                                    Stack<TagInstance> tempStack,
+                                    Deque<TagInstance> tempStack,
                                     int offset,
                                     int closingOffset,
                                     String sTag) {
@@ -190,7 +191,7 @@ public class HTMLSearchableCompression {
   }
 
   private TagInstance getTagClosing(Matcher m,
-                                    Stack<TagInstance> tempStack,
+                                    Deque<TagInstance> tempStack,
                                     int offset,
                                     String sTag) {
     TagInstance tInstance;
@@ -206,7 +207,7 @@ public class HTMLSearchableCompression {
     return tInstance;
   }
 
-  private void processSelfClosingTags(Stack<TagInstance> sClosings,
+  private void processSelfClosingTags(Deque<TagInstance> sClosings,
                                       InsertStringBuilder html,
                                       int index) {
     TagInstance t;
@@ -221,14 +222,14 @@ public class HTMLSearchableCompression {
     plainText = html.toString();
   }
 
-  private int processOpeningTags(InsertStringBuilder html, Stack<TagInstance> ts, int index) {
+  private int processOpeningTags(InsertStringBuilder html, Deque<TagInstance> ts, int index) {
     TagInstance t = ts.pop();
     String s = plainText.substring(t.from(), index);
     html.insertFirst(t.openingString() + s);
     return t.from();
   }
 
-  private int processClosingTags(InsertStringBuilder html, Stack<TagInstance> ts, int index) {
+  private int processClosingTags(InsertStringBuilder html, Deque<TagInstance> ts, int index) {
     TagInstance t = tags.pop();
     String s = plainText.substring(t.to(), index);
     html.insertFirst(t.closingString() + s);
@@ -271,9 +272,9 @@ public class HTMLSearchableCompression {
     }
   }
 
-  public Stack<TagInstance> getSelfClosings() {
-    Stack<TagInstance> tempTags = new Stack<>();
-    Stack<TagInstance> cloneTags = new Stack<>();
+  public Deque<TagInstance> getSelfClosings() {
+    Deque<TagInstance> tempTags = new LinkedList<>();
+    Deque<TagInstance> cloneTags = new LinkedList<>();
     for (TagInstance t : selfClosings) {
       tempTags.push(t);
     }
@@ -288,9 +289,9 @@ public class HTMLSearchableCompression {
     return plainText;
   }
 
-  public Stack<TagInstance> getTags() {
-    Stack<TagInstance> tempTags = new Stack<>();
-    Stack<TagInstance> cloneTags = new Stack<>();
+  public Deque<TagInstance> getTags() {
+    Deque<TagInstance> tempTags = new LinkedList<>();
+    Deque<TagInstance> cloneTags = new LinkedList<>();
     for (TagInstance t : tags) {
       tempTags.push(t);
     }
