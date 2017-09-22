@@ -185,6 +185,10 @@ public class HTMLSearchableCompression {
     return html.insertFirst(c.plainText.substring(0, index)).toString();
   }
 
+  /**
+   * Assumption : their are always regular tags, selfClosing tags are optional
+   * @return
+   */
   public String serializeTagsString() {
     StringBuilder s = new StringBuilder();
 
