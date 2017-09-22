@@ -9,12 +9,16 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.plato.util.html.TagInstance.TAG_DELIMIT;
+
 /**
  * TODO : Support '<' & '>' in plain text
  * Created by Alan Mantoux.
  */
 public class HTMLSearchableCompression {
 
+  static final         String ESCAPE       = "#";
+  private static final String TAGS_DELIMIT = ESCAPE + "tags" + ESCAPE;
   private Deque<TagInstance> tags;
   private Deque<TagInstance> selfClosings;
   private String             plainText;
@@ -92,7 +96,8 @@ public class HTMLSearchableCompression {
     /* Helper variables */
     int nextToParseIndex = 0;
     StringBuilder sbPlainText = new StringBuilder();
-    Deque<TagInstance> tempStack = new LinkedList<>(); // Structure to store opened tag not yet closed
+    Deque<TagInstance> tempStack =
+      new LinkedList<>(); // Structure to store opened tag not yet closed
     int offset = 0; // offset for regular tags
     int closingOffset = 0; // offset for closing tags
 
@@ -120,7 +125,7 @@ public class HTMLSearchableCompression {
     plainText = sbPlainText.append(in.substring(nextToParseIndex)).toString();
   }
 
-  public long computeSize() {
+  private long computeSize() {
     long size = plainText.length() * 16;
     for (TagInstance t : tags) {
       size += 32 * 2 + t.tagName().toString().length() * 16;
@@ -270,6 +275,35 @@ public class HTMLSearchableCompression {
       String[] sKeyValue = s.split("\\:");
       t.addStyleAttribute(new StyleAttribute(sKeyValue[0].trim(), sKeyValue[1].trim()));
     }
+  }
+
+  public static HTMLSearchableCompression deserializeString(String in) {
+    HTMLSearchableCompression c = new HTMLSearchableCompression();
+    String[] tmp = in.split(TAGS_DELIMIT);
+    for (String sTag : tmp[1].split(TAG_DELIMIT)) {
+      if (!"".equals(sTag.trim()))
+        c.tags.add(TagInstance.deserializeString(sTag, false));
+    }
+    for (String sTag : tmp[2].split(TAG_DELIMIT)) {
+      if (!"".equals(sTag.trim()))
+        c.selfClosings.add(TagInstance.deserializeString(sTag, true));
+    }
+
+    return c;
+  }
+
+  public String serializeTagsString() {
+    // Serialize regular tags
+    StringBuilder s = new StringBuilder(TAGS_DELIMIT);
+    for (TagInstance t : tags) {
+      s.append(TAG_DELIMIT).append(t.serializeString());
+    }
+    s.append(TAGS_DELIMIT);
+    for (TagInstance t : selfClosings) {
+      s.append(TAG_DELIMIT).append(t.serializeString());
+    }
+
+    return s.toString();
   }
 
   public Deque<TagInstance> getSelfClosings() {

@@ -7,6 +7,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.lang.reflect.Executable;
 import java.util.Deque;
 import java.util.LinkedList;
 
@@ -23,6 +24,7 @@ public class HTMLSearchableCompressionTest {
   public static Deque<TagInstance> tags         = new LinkedList<>();
   public static Deque<TagInstance> selfClosings = new LinkedList<>();
   public static HTMLSearchableCompression parser;
+  public static String stringSerial = "#tags##tagp;28;32#stylefont-color#:red;font-size#:10em#tagem;28;32#tagstrong;15;28#tagem;22;28#tags##tagbr;11";
 
   @BeforeClass
   public static void initAll() {
@@ -55,6 +57,20 @@ public class HTMLSearchableCompressionTest {
     assertEquals("Encoding - plain text : ", plainText, parser.getPlainText());
     assertEquals("Encoding - tags : ", tags, parser.getTags());
     assertEquals("Encoding - selfclosing tags : ", selfClosings, parser.getSelfClosings());
+  }
+
+  @Test
+  public void serializeString() throws Exception {
+    parser.encode(toEncode);
+    assertEquals("Serialize : ", stringSerial, parser.serializeTagsString());
+  }
+
+  @Test
+  public void deserializeString() throws Exception {
+    parser.encode(toEncode);
+    String exp = parser.serializeTagsString();
+    String obs = HTMLSearchableCompression.deserializeString(exp).serializeTagsString();
+    assertEquals("Deserialize : ", exp, obs);
   }
 
 }

@@ -20,6 +20,14 @@ public enum Tag {
     this.isSelfClosing = isSelfClosing;
   }
 
+  public static Tag getInstance(String s) {
+    for (Tag t : values()) {
+      if (t.toString().equals(s))
+        return t;
+    }
+    return null;
+  }
+
   public static Tag isTag(String input) {
     String sTagName = prepareString(input);
     for (Tag t : Tag.values()) {
@@ -36,9 +44,6 @@ public enum Tag {
       return in.substring(1, hasAttribute ? indexSpace : in.indexOf('>'));
     }
     return in.substring(2, hasAttribute ? indexSpace : in.indexOf('>'));
-  }
-
-  public static void main(String[] args) {
   }
 
   public String closingString() {
@@ -58,9 +63,6 @@ public enum Tag {
 
   public static String getRegex() {
     StringBuilder sbRegex = new StringBuilder();
-    String spaceStyleOpt = "(" + StyleAttribute.STYLE_REGEX + ")";
-    String spaceClassOpt = "(" + ClassAttribute.CLASS_REGEX + ")";
-
     sbRegex.append("</?(");
     for (Tag t : Tag.values()) {
       sbRegex.append(t.string).append("|");

@@ -3,11 +3,16 @@ package com.plato.util.html;
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.plato.util.html.ClassAttribute.*;
+import static com.plato.util.html.HTMLSearchableCompression.ESCAPE;
+import static com.plato.util.html.StyleAttribute.*;
+
 /**
  * Created by Alan Mantoux.
  */
 public class TagInstance {
 
+  static final         String TAG_DELIMIT  = ESCAPE + "tag";
   private static final String OUT_OF_RANGE =
     "rangeFrom and rangeTo must both be greater or equal than 0";
   private static final String UNRECOGNIZED = " is not a recognized tag";
@@ -41,6 +46,28 @@ public class TagInstance {
     this.classAttributes = new LinkedList<>();
   }
 
+  private TagInstance(Tag tag, int rangeFrom, int rangeTo) {
+    if (rangeFrom < 0 || rangeTo < 0)
+      throw new IllegalArgumentException(OUT_OF_RANGE);
+    this.tag = tag;
+    this.rangeFrom = rangeFrom;
+    this.rangeTo = rangeTo;
+    this.styleAttributes = new LinkedList<>();
+    this.classAttributes = new LinkedList<>();
+  }
+
+  // Only for self closing tags
+  private TagInstance(Tag tag, int rangeFrom) {
+    if (rangeFrom < 0)
+      throw new IllegalArgumentException(OUT_OF_RANGE);
+    this.tag = tag;
+    this.tag.isSelfClosing = true;
+    this.rangeFrom = rangeFrom;
+    this.rangeTo = rangeFrom;
+    this.styleAttributes = new LinkedList<>();
+    this.classAttributes = new LinkedList<>();
+  }
+
   public TagInstance(String sTagName, int rangeFrom) {
 
     if (rangeFrom < 0)
@@ -58,7 +85,53 @@ public class TagInstance {
     this.classAttributes = new LinkedList<>();
   }
 
-  public String openingString() {
+  static TagInstance deserializeString(String in, boolean selfClosing) {
+    if (selfClosing) {
+      String[] sTagProps = in.split(";");
+      return new TagInstance(Tag.getInstance(sTagProps[0]), Integer.parseInt(sTagProps[1]));
+    }
+    // Isolate tag props
+    // it will always start with style
+    String regexStyleOrClass = "(" + STYLE_DELIMIT + ")|(" + CLASS_DELIMIT + ")";
+    String[] sTemp = in.split(regexStyleOrClass);
+    String[] sTagProps = sTemp[0].split(";");
+    TagInstance t = new TagInstance(Tag.getInstance(sTagProps[0]), Integer.parseInt(sTagProps[1]),
+      Integer.parseInt(sTagProps[2]));
+
+    if (sTemp.length < 2 || "".equals(sTemp[1].trim()))
+      return t;
+
+    boolean hasStyle = in.contains(STYLE_DELIMIT);
+    boolean hasClass = in.contains(CLASS_DELIMIT);
+    int indexOfClass = hasStyle ? 2 : 1;
+    if (hasStyle) {
+      // parse style
+      String[] sStyles = sTemp[1].split(";");
+      for (String s : sStyles) {
+        t.addStyleAttribute(StyleAttribute.deserializeString(s));
+      }
+    }
+
+    if (hasClass) {
+      // parse class
+      String[] sClass = sTemp[indexOfClass].split(";");
+      for (String c : sClass) {
+        t.addClassAttribute(ClassAttribute.deserializeString(c));
+      }
+    }
+
+    return t;
+  }
+
+  public void addStyleAttribute(StyleAttribute s) {
+    styleAttributes.add(s);
+  }
+
+  void addClassAttribute(ClassAttribute c) {
+    classAttributes.add(c);
+  }
+
+  String openingString() {
     StringBuilder openingString = new StringBuilder("<" + tagName().toString());
 
     // set class attributes
@@ -83,20 +156,42 @@ public class TagInstance {
     return openingString.append(">").toString();
   }
 
-  public Tag tagName() {
+  Tag tagName() {
     return tag;
   }
 
-  public String closingString() {
+  String closingString() {
     return tagName().closingString();
   }
 
-  public void addStyleAttribute(StyleAttribute s) {
-    styleAttributes.add(s);
+  String serializeString() {
+    if (tag.isSelfClosing)
+      return tag.toString() + ";" + from();
+    StringBuilder s = new StringBuilder();
+    s.append(tag.toString()).append(";").append(from()).append(";").append(to());
+    addAttributesToStringBuilder(s, styleAttributes, STYLE_DELIMIT);
+    addAttributesToStringBuilder(s, classAttributes, CLASS_DELIMIT);
+    return s.toString();
   }
 
-  public void addClassAttribute(ClassAttribute c) {
-    classAttributes.add(c);
+  int from() {
+    return rangeFrom;
+  }
+
+  int to() {
+    return rangeTo;
+  }
+
+  private void addAttributesToStringBuilder(StringBuilder s,
+                                            List<? extends Attribute> attributes,
+                                            String attrTag) {
+    if (!attributes.isEmpty()) {
+      s.append(attrTag);
+      for (Attribute a : attributes) {
+        s.append(a.serializeString()).append(";");
+      }
+      s.deleteCharAt(s.length() - 1);
+    }
   }
 
   @Override
@@ -134,27 +229,22 @@ public class TagInstance {
 
   @Override
   public String toString() {
-    String queue = (styleAttributes.isEmpty() ? "" : "\n" + styleAttributes) + (classAttributes.isEmpty() ? "" : "\n" + classAttributes);
+    String queue =
+      (styleAttributes.isEmpty() ? "" : "\n" + styleAttributes) + (classAttributes.isEmpty() ?
+        "" :
+        "\n" + classAttributes);
     return tagName().toString() + "; " + from() + "; " + to() + queue;
   }
 
-  public int from() {
-    return rangeFrom;
-  }
-
-  public int to() {
-    return rangeTo;
-  }
-
-  public List<StyleAttribute> getStyleAttributes() {
+  List<StyleAttribute> getStyleAttributes() {
     return styleAttributes;
   }
 
-  public List<ClassAttribute> getClassAttributes() {
+  List<ClassAttribute> getClassAttributes() {
     return classAttributes;
   }
 
-  public void setRangeTo(int to) {
+  void setRangeTo(int to) {
     rangeTo = to;
   }
 }

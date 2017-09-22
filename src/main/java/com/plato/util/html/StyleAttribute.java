@@ -1,10 +1,12 @@
 package com.plato.util.html;
 
+import static com.plato.util.html.HTMLSearchableCompression.ESCAPE;
+
 /**
  * Created by Alan Mantoux.
  */
-public class StyleAttribute {
-  public static final String STYLE_REGEX = "style=\"(\\{)?"
+public class StyleAttribute implements Attribute {
+  static final String STYLE_REGEX   = "style=\"(\\{)?"
     // Open any style instruction
     + "("
     // Style key
@@ -15,6 +17,7 @@ public class StyleAttribute {
     + ")*"
     // Clos option style attribute
     + "(\\})?\"";
+  static final String STYLE_DELIMIT = ESCAPE + "style";
   private String key;
   private String value;
 
@@ -23,20 +26,18 @@ public class StyleAttribute {
     this.value = value;
   }
 
-  public String getKey() {
-    return key;
+  static StyleAttribute deserializeString(String s) {
+    if (s == null)
+      throw new NullPointerException("Input value is cannot be null");
+    if ("".equals(s.trim()))
+      throw new IllegalArgumentException("Value of style attribute cannot be empty");
+    String[] sProps = s.split(ESCAPE + ":");
+    return new StyleAttribute(sProps[0], sProps[1]);
   }
 
-  public void setKey(String key) {
-    this.key = key;
-  }
-
-  public String getValue() {
-    return value;
-  }
-
-  public void setValue(String value) {
-    this.value = value;
+  @Override
+  public String serializeString() {
+    return key + ESCAPE + ":" + value;
   }
 
   @Override
@@ -60,5 +61,21 @@ public class StyleAttribute {
 
   public String toString() {
     return key + ":" + value;
+  }
+
+  String getKey() {
+    return key;
+  }
+
+  public void setKey(String key) {
+    this.key = key;
+  }
+
+  String getValue() {
+    return value;
+  }
+
+  public void setValue(String value) {
+    this.value = value;
   }
 }
