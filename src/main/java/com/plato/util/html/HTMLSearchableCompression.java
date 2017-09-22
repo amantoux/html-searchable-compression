@@ -132,7 +132,7 @@ public class HTMLSearchableCompression {
   }
 
   private long computeSize() {
-    long size = plainText.length() * 16;
+    long size = plainText.length() * (long)16;
     for (TagInstance t : tags) {
       size += 32 * 2 + t.tagName().toString().length() * 16;
       for (StyleAttribute s : t.getStyleAttributes()) {
@@ -188,7 +188,7 @@ public class HTMLSearchableCompression {
   /**
    * Assumption : their are always regular tags, selfClosing tags are optional
    *
-   * @return
+   * @return the String format of the compression
    */
   public String serializeTagsString() {
     StringBuilder s = new StringBuilder();
