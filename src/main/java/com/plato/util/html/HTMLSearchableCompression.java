@@ -31,12 +31,11 @@ public class HTMLSearchableCompression {
 
   public static void main(String[] args) {
     HTMLSearchableCompression parser = new HTMLSearchableCompression();
-    Scanner s = new Scanner(System.in);
     long start, end;
     String seed =
       "<p>Alors?! on se la prend cette bière???</p><p>Je suis <strong>hyper</strong> saoulé...</p><p><span class=\"ql-size-large\" style=\"color: rgb(0, 138, 0);\">Vraiment?....</span></p><p><span class=\"ql-size-large\" style=\"color: rgb(230, 0, 0);\">Hein? re re quoi? ?</span></p><p><span class=\"ql-size-large\" style=\"color: rgb(102, 163, 224);\">Oui qyoi</span></p>";
     StringBuilder sb = new StringBuilder();
-    int nbRepet = 1;
+    int nbRepet = 100_000;
     for (int i = 0; i < nbRepet; i++) {
       sb.append(seed);
     }
@@ -46,8 +45,6 @@ public class HTMLSearchableCompression {
       "Estimated size of file : " + seed.length() * nbRepet * 16 /* char size*/ / 1024 / 1024
         + "Mo");
     String toEncode = sb.toString();
-    System.out.println("Hit enter to start");
-    s.nextLine();
 
     start = System.currentTimeMillis();
     parser.encode(toEncode);
@@ -70,18 +67,29 @@ public class HTMLSearchableCompression {
 
     HTMLSearchableCompression decodeParser = new HTMLSearchableCompression();
     start = System.currentTimeMillis();
-    String out = decodeParser.decode(parser.plainText, parser.tags, parser.selfClosings);
+    HTMLSearchableCompression.decode(parser.plainText, parser.tags, parser.selfClosings);
     end = System.currentTimeMillis();
 
     System.out.println("---- decoding ----");
     System.out.println("Decoded in " + (end - start) + "ms");
     System.out.println("");
-    System.out.println("---- diff ----");
-    System.out.println(toEncode.equals(out) ? "OK" : "NOK");
-    if (!toEncode.equals(out)) {
-      System.out.println(toEncode);
-      System.out.println(out);
-    }
+
+    parser.encode(toEncode);
+    start = System.currentTimeMillis();
+    String serialString = parser.serializeTagsString();
+    end = System.currentTimeMillis();
+
+    System.out.println("---- Serializing ---");
+    System.out.println("Serialize in " + (end - start) + "ms");
+    System.out.println("");
+
+    start = System.currentTimeMillis();
+    HTMLSearchableCompression.deserializeString(serialString);
+    end = System.currentTimeMillis();
+
+    System.out.println("---- Deserializing ---");
+    System.out.println("Deserialize in " + (end - start) + "ms");
+    System.out.println("");
   }
 
   /*
@@ -142,10 +150,11 @@ public class HTMLSearchableCompression {
     return size;
   }
 
-  public String decode(String plain, Deque<TagInstance> inTags, Deque<TagInstance> sClosings) {
-    this.tags = inTags;
-    this.selfClosings = sClosings;
-    this.plainText = plain;
+  public static String decode(String plain, Deque<TagInstance> inTags, Deque<TagInstance> sClosings) {
+    HTMLSearchableCompression c = new HTMLSearchableCompression();
+    c.tags = inTags;
+    c.selfClosings = sClosings;
+    c.plainText = plain;
 
     InsertStringBuilder html = new InsertStringBuilder();
     Deque<TagInstance> ts = new LinkedList<>();
@@ -153,27 +162,72 @@ public class HTMLSearchableCompression {
     TagInstance t;
 
     /* Insert self closing tags in plain text */
-    processSelfClosingTags(sClosings, html, index);
+    c.processSelfClosingTags(sClosings, html, index);
 
     /* Rebase input with included self closing tags */
-    index = plainText.length();
+    index = c.plainText.length();
     html = new InsertStringBuilder();
 
     /* Process tags from the stack */
-    while (tags.peek() != null) {
+    while (c.tags.peek() != null) {
       t = ts.peek();
 
       /* if next tag is closing before the opening of the last processed one */
-      if (t != null && tags.peek().to() <= t.from()) {
-        index = processOpeningTags(html, ts, index);
+      if (t != null && c.tags.peek().to() <= t.from()) {
+        index = c.processOpeningTags(html, ts, index);
       } else {
-        index = processClosingTags(html, ts, index);
+        index = c.processClosingTags(html, ts, index);
       }
     }
     while (ts.peek() != null) {
-      index = processOpeningTags(html, ts, index);
+      index = c.processOpeningTags(html, ts, index);
     }
-    return html.insertFirst(plainText.substring(0, index)).toString();
+    return html.insertFirst(c.plainText.substring(0, index)).toString();
+  }
+
+  public String serializeTagsString() {
+    StringBuilder s = new StringBuilder();
+
+    // Serialize regular tags
+    if (!tags.isEmpty()) {
+      s.append(TAGS_DELIMIT);
+      for (TagInstance t : tags) {
+        s.append(TAG_DELIMIT).append(t.serializeString());
+      }
+    }
+
+    if (!selfClosings.isEmpty())
+      return s.toString();
+
+    s.append(TAGS_DELIMIT);
+    for (TagInstance t : selfClosings) {
+      s.append(TAG_DELIMIT).append(t.serializeString());
+    }
+
+    return s.toString();
+  }
+
+  public static HTMLSearchableCompression deserializeString(String in) {
+    HTMLSearchableCompression c = new HTMLSearchableCompression();
+    String[] tmp = in.split(TAGS_DELIMIT);
+
+    if (tmp.length < 2)
+      throw new IllegalArgumentException("Input is either empty or invalid");
+    for (String sTag : tmp[1].split(TAG_DELIMIT)) {
+      if (!"".equals(sTag.trim()))
+        c.tags.add(TagInstance.deserializeString(sTag, false));
+    }
+
+    // if no self closings
+    if (tmp.length < 3)
+      return c;
+
+    for (String sTag : tmp[2].split(TAG_DELIMIT)) {
+      if (!"".equals(sTag.trim()))
+        c.selfClosings.add(TagInstance.deserializeString(sTag, true));
+    }
+
+    return c;
   }
 
   private TagInstance getTagOpening(Matcher m,
@@ -275,35 +329,6 @@ public class HTMLSearchableCompression {
       String[] sKeyValue = s.split("\\:");
       t.addStyleAttribute(new StyleAttribute(sKeyValue[0].trim(), sKeyValue[1].trim()));
     }
-  }
-
-  public static HTMLSearchableCompression deserializeString(String in) {
-    HTMLSearchableCompression c = new HTMLSearchableCompression();
-    String[] tmp = in.split(TAGS_DELIMIT);
-    for (String sTag : tmp[1].split(TAG_DELIMIT)) {
-      if (!"".equals(sTag.trim()))
-        c.tags.add(TagInstance.deserializeString(sTag, false));
-    }
-    for (String sTag : tmp[2].split(TAG_DELIMIT)) {
-      if (!"".equals(sTag.trim()))
-        c.selfClosings.add(TagInstance.deserializeString(sTag, true));
-    }
-
-    return c;
-  }
-
-  public String serializeTagsString() {
-    // Serialize regular tags
-    StringBuilder s = new StringBuilder(TAGS_DELIMIT);
-    for (TagInstance t : tags) {
-      s.append(TAG_DELIMIT).append(t.serializeString());
-    }
-    s.append(TAGS_DELIMIT);
-    for (TagInstance t : selfClosings) {
-      s.append(TAG_DELIMIT).append(t.serializeString());
-    }
-
-    return s.toString();
   }
 
   public Deque<TagInstance> getSelfClosings() {
