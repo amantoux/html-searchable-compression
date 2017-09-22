@@ -5,14 +5,12 @@ import com.plato.util.datastructures.InsertStringBuilder;
 import java.text.DecimalFormat;
 import java.util.Deque;
 import java.util.LinkedList;
-import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.plato.util.html.TagInstance.TAG_DELIMIT;
 
 /**
- * TODO : Support '<' & '>' in plain text
  * Created by Alan Mantoux.
  */
 public class HTMLSearchableCompression {
@@ -150,7 +148,9 @@ public class HTMLSearchableCompression {
     return size;
   }
 
-  public static String decode(String plain, Deque<TagInstance> inTags, Deque<TagInstance> sClosings) {
+  public static String decode(String plain,
+                              Deque<TagInstance> inTags,
+                              Deque<TagInstance> sClosings) {
     HTMLSearchableCompression c = new HTMLSearchableCompression();
     c.tags = inTags;
     c.selfClosings = sClosings;
@@ -187,6 +187,7 @@ public class HTMLSearchableCompression {
 
   /**
    * Assumption : their are always regular tags, selfClosing tags are optional
+   *
    * @return
    */
   public String serializeTagsString() {
