@@ -201,7 +201,7 @@ public class HTMLSearchableCompression {
       }
     }
 
-    if (!selfClosings.isEmpty())
+    if (selfClosings.isEmpty())
       return s.toString();
 
     s.append(TAGS_DELIMIT);
