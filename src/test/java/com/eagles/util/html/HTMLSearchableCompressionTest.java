@@ -7,7 +7,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.lang.reflect.Executable;
 import java.util.Deque;
 import java.util.LinkedList;
 
@@ -18,13 +17,14 @@ import static org.junit.Assert.assertEquals;
  */
 public class HTMLSearchableCompressionTest {
 
-  public static String             toEncode     =
+  private static String             toEncode     =
     "This is... <br><strong>REALLY <em>REALLY</em></strong><p style=\"font-color:red;font-size:10em;\"><em>good</em></p>123";
-  public static String             plainText    = "This is... REALLY REALLYgood123";
-  public static Deque<TagInstance> tags         = new LinkedList<>();
-  public static Deque<TagInstance> selfClosings = new LinkedList<>();
-  public static HTMLSearchableCompression parser;
-  public static String stringSerial = "#tags##tagp;28;32#stylefont-color#:red;font-size#:10em#tagem;28;32#tagstrong;15;28#tagem;22;28#tags##tagbr;11";
+  private static String             plainText    = "This is... REALLY REALLYgood123";
+  private static Deque<TagInstance> tags         = new LinkedList<>();
+  private static Deque<TagInstance> selfClosings = new LinkedList<>();
+  private static HTMLSearchableCompression parser;
+  private static String stringSerial =
+    "#tags##tagp;28;32#stylefont-color#:red;font-size#:10em#tagem;28;32#tagstrong;15;28#tagem;22;28#tags##tagbr;11";
 
   @BeforeClass
   public static void initAll() {
@@ -38,8 +38,8 @@ public class HTMLSearchableCompressionTest {
     parser = new HTMLSearchableCompression();
     tags.push(new TagInstance("<em>", 22, 28));
     tags.push(new TagInstance("<strong>", 15, 28));
-    tags.push(new TagInstance("<em>", 28,32));
-    TagInstance p = new TagInstance("<p>", 28,32);
+    tags.push(new TagInstance("<em>", 28, 32));
+    TagInstance p = new TagInstance("<p>", 28, 32);
     p.addStyleAttribute(new StyleAttribute("font-color", "red"));
     p.addStyleAttribute(new StyleAttribute("font-size", "10em"));
     tags.push(p);
@@ -48,7 +48,8 @@ public class HTMLSearchableCompressionTest {
 
   @Test
   public void decode() throws Exception {
-    assertEquals("Decoding : ", toEncode, parser.decode(plainText, tags, selfClosings));
+    assertEquals("Decoding : ", toEncode,
+      HTMLSearchableCompression.decode(plainText, tags, selfClosings));
   }
 
   @Test

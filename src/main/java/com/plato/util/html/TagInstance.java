@@ -3,9 +3,9 @@ package com.plato.util.html;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.plato.util.html.ClassAttribute.*;
+import static com.plato.util.html.ClassAttribute.CLASS_DELIMIT;
 import static com.plato.util.html.HTMLSearchableCompression.ESCAPE;
-import static com.plato.util.html.StyleAttribute.*;
+import static com.plato.util.html.StyleAttribute.STYLE_DELIMIT;
 
 /**
  * Created by Alan Mantoux.

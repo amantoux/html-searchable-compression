@@ -9,7 +9,8 @@ import java.util.regex.Pattern;
 public class TestClass {
   public static void main(String[] args) {
     String s = "<p class=\"ql-font-style\" style=\"font-color:red;font-size:10em;\">";
-    String s1 = "<strong class=\"ql-font-style\">REALLY</strong><p class=\"ql-font-style\" style=\"font-color:red;font-size:10em;\">sdf</p>";
+    String s1 =
+      "<strong class=\"ql-font-style\">REALLY</strong><p class=\"ql-font-style\" style=\"font-color:red;font-size:10em;\">sdf</p>";
     StringBuilder sbRegex = new StringBuilder();
     sbRegex.append("</?(");
     for (Tag t : Tag.values()) {

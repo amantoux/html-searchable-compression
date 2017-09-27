@@ -1,13 +1,13 @@
 package com.plato.util.html;
 
-import static com.plato.util.html.HTMLSearchableCompression.*;
+import static com.plato.util.html.HTMLSearchableCompression.ESCAPE;
 
 /**
  * Created by Alan Mantoux.
  */
-public class ClassAttribute implements Attribute{
+public class ClassAttribute implements Attribute {
 
-  static final String CLASS_REGEX = "class=\"([a-z0-9]|-|\\s)+\"";
+  static final String CLASS_REGEX   = "class=\"([a-z0-9]|-|\\s)+\"";
   static final String CLASS_DELIMIT = ESCAPE + "class";
 
   private String value;
@@ -25,6 +25,11 @@ public class ClassAttribute implements Attribute{
   }
 
   @Override
+  public int hashCode() {
+    return value.hashCode();
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o)
       return true;
@@ -37,8 +42,8 @@ public class ClassAttribute implements Attribute{
   }
 
   @Override
-  public int hashCode() {
-    return value.hashCode();
+  public String toString() {
+    return value;
   }
 
   @Override
@@ -52,10 +57,5 @@ public class ClassAttribute implements Attribute{
 
   public void setValue(String value) {
     this.value = value;
-  }
-
-  @Override
-  public String toString() {
-    return value;
   }
 }

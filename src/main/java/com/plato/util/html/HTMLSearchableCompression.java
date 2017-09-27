@@ -63,7 +63,6 @@ public class HTMLSearchableCompression {
     System.out.println("Encoded in " + (end - start) + "ms");
     System.out.println("");
 
-    HTMLSearchableCompression decodeParser = new HTMLSearchableCompression();
     start = System.currentTimeMillis();
     HTMLSearchableCompression.decode(parser.plainText, parser.tags, parser.selfClosings);
     end = System.currentTimeMillis();
@@ -132,7 +131,7 @@ public class HTMLSearchableCompression {
   }
 
   private long computeSize() {
-    long size = plainText.length() * (long)16;
+    long size = plainText.length() * (long) 16;
     for (TagInstance t : tags) {
       size += 32 * 2 + t.tagName().toString().length() * 16;
       for (StyleAttribute s : t.getStyleAttributes()) {
@@ -216,8 +215,11 @@ public class HTMLSearchableCompression {
     HTMLSearchableCompression c = new HTMLSearchableCompression();
     String[] tmp = in.split(TAGS_DELIMIT);
 
-    if (tmp.length < 2)
-      throw new IllegalArgumentException("Input is either empty or invalid");
+    // if no tag
+    if (tmp.length < 2) {
+      return c;
+    }
+
     for (String sTag : tmp[1].split(TAG_DELIMIT)) {
       if (!"".equals(sTag.trim()))
         c.tags.add(TagInstance.deserializeString(sTag, false));
@@ -336,6 +338,24 @@ public class HTMLSearchableCompression {
     }
   }
 
+  public static String decode(String plain, String tags) {
+    HTMLSearchableCompression c = deserializeString(tags);
+    return decode(plain, c.getTags(), c.getSelfClosings());
+  }
+
+  public Deque<TagInstance> getTags() {
+    Deque<TagInstance> tempTags = new LinkedList<>();
+    Deque<TagInstance> cloneTags = new LinkedList<>();
+    for (TagInstance t : tags) {
+      tempTags.push(t);
+    }
+    for (TagInstance t : tempTags) {
+      cloneTags.push(t);
+    }
+
+    return cloneTags;
+  }
+
   public Deque<TagInstance> getSelfClosings() {
     Deque<TagInstance> tempTags = new LinkedList<>();
     Deque<TagInstance> cloneTags = new LinkedList<>();
@@ -351,18 +371,5 @@ public class HTMLSearchableCompression {
 
   public String getPlainText() {
     return plainText;
-  }
-
-  public Deque<TagInstance> getTags() {
-    Deque<TagInstance> tempTags = new LinkedList<>();
-    Deque<TagInstance> cloneTags = new LinkedList<>();
-    for (TagInstance t : tags) {
-      tempTags.push(t);
-    }
-    for (TagInstance t : tempTags) {
-      cloneTags.push(t);
-    }
-
-    return cloneTags;
   }
 }

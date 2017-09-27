@@ -28,6 +28,11 @@ public enum Tag {
     return null;
   }
 
+  @Override
+  public String toString() {
+    return string;
+  }
+
   public static Tag isTag(String input) {
     String sTagName = prepareString(input);
     for (Tag t : Tag.values()) {
@@ -54,11 +59,6 @@ public enum Tag {
 
   public String openingString() {
     return "<" + toString() + ">";
-  }
-
-  @Override
-  public String toString() {
-    return string;
   }
 
   public static String getRegex() {
