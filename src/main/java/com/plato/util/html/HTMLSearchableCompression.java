@@ -193,15 +193,10 @@ public class HTMLSearchableCompression {
     StringBuilder s = new StringBuilder();
 
     // Serialize regular tags
-    if (!tags.isEmpty()) {
-      s.append(TAGS_DELIMIT);
-      for (TagInstance t : tags) {
-        s.append(TAG_DELIMIT).append(t.serializeString());
-      }
+    s.append(TAGS_DELIMIT);
+    for (TagInstance t : tags) {
+      s.append(TAG_DELIMIT).append(t.serializeString());
     }
-
-    if (selfClosings.isEmpty())
-      return s.toString();
 
     s.append(TAGS_DELIMIT);
     for (TagInstance t : selfClosings) {

@@ -23,8 +23,10 @@ public class HTMLSearchableCompressionTest {
   private static Deque<TagInstance> tags         = new LinkedList<>();
   private static Deque<TagInstance> selfClosings = new LinkedList<>();
   private static HTMLSearchableCompression parser;
-  private static String stringSerial =
+  private static String stringSerial          =
     "#tags##tagp;28;32#stylefont-color#:red;font-size#:10em#tagem;28;32#tagstrong;15;28#tagem;22;28#tags##tagbr;11";
+  private static String toEncodeOnlySelf      = "This<br> is... REALLY REALLYgood123";
+  private static String stringOnlySelfClosing = "#tags##tags##tagbr;4";
 
   @BeforeClass
   public static void initAll() {
@@ -69,6 +71,14 @@ public class HTMLSearchableCompressionTest {
   @Test
   public void deserializeString() throws Exception {
     parser.encode(toEncode);
+    String exp = parser.serializeTagsString();
+    String obs = HTMLSearchableCompression.deserializeString(exp).serializeTagsString();
+    assertEquals("Deserialize : ", exp, obs);
+  }
+
+  @Test
+  public void deserializeStringOnlySelfClosing() throws Exception {
+    parser.encode(toEncodeOnlySelf);
     String exp = parser.serializeTagsString();
     String obs = HTMLSearchableCompression.deserializeString(exp).serializeTagsString();
     assertEquals("Deserialize : ", exp, obs);
