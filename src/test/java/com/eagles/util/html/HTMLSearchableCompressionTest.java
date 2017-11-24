@@ -1,5 +1,6 @@
 package com.eagles.util.html;
 
+import com.plato.util.html.Attribute;
 import com.plato.util.html.HTMLSearchableCompression;
 import com.plato.util.html.StyleAttribute;
 import com.plato.util.html.TagInstance;
@@ -88,7 +89,49 @@ public class HTMLSearchableCompressionTest {
   public void encodeWithUrl() throws Exception {
     String toEncode =
       "<a href=\"https://www.franceinter.fr\" target=\"_blank\">https://www.franceinter.fr</a>";
+    String plainText = "https://www.franceinter.fr";
+    TagInstance anchor = new TagInstance("<a>", 0, 26);
+    anchor.addAttribute(new Attribute("href", "https://www.franceinter.fr"));
+    anchor.addAttribute(new Attribute("target", "_blank"));
+    Deque<TagInstance> tags = new LinkedList<>();
+    tags.push(anchor);
     parser.encode(toEncode);
+    assertEquals("Encoding with URL - plain text : ", plainText, parser.getPlainText());
+    assertEquals("Encoding with URL - tags : ", tags, parser.getTags());
   }
 
+  @Test
+  public void decodeWithUrl() throws Exception {
+    String toEncode =
+      "<a href=\"https://www.franceinter.fr\" target=\"_blank\">https://www.franceinter.fr</a>";
+    String plainText = "https://www.franceinter.fr";
+    TagInstance anchor = new TagInstance("<a>", 0, 26);
+    anchor.addAttribute(new Attribute("href", "https://www.franceinter.fr"));
+    anchor.addAttribute(new Attribute("target", "_blank"));
+    Deque<TagInstance> tags = new LinkedList<>();
+    tags.push(anchor);
+    String observed = HTMLSearchableCompression.decode(plainText, tags, new LinkedList<>());
+    assertEquals("Decode with url : ", toEncode, observed);
+  }
+
+  @Test
+  public void serializeStringWithUrl() throws Exception {
+    String toEncode =
+      "<a href=\"https://www.franceinter.fr\" target=\"_blank\">https://www.franceinter.fr</a>";
+    String plainText = "https://www.franceinter.fr";
+    String expected =
+      "#tags##taga;0;26#attrhref=\"https://www.franceinter.fr\";target=\"_blank\"#tags#";
+    parser.encode(toEncode);
+    assertEquals("Serialize with URL : ", expected, parser.serializeTagsString());
+  }
+
+  @Test
+  public void deserializeStringWithUrl() throws Exception {
+    String toEncode =
+      "<a href=\"https://www.franceinter.fr\" target=\"_blank\">https://www.franceinter.fr</a>";
+    parser.encode(toEncode);
+    String exp = parser.serializeTagsString();
+    String obs = HTMLSearchableCompression.deserializeString(exp).serializeTagsString();
+    assertEquals("Deserialize with URL : ", exp, obs);
+  }
 }

@@ -5,7 +5,7 @@ import static com.plato.util.html.HTMLSearchableCompression.ESCAPE;
 /**
  * Created by Alan Mantoux.
  */
-public class ClassAttribute implements Attribute {
+public class ClassAttribute implements StringSerializable {
 
   static final String CLASS_REGEX   = "class=\"([a-z0-9]|-|\\s)+\"";
   static final String CLASS_DELIMIT = ESCAPE + "class";

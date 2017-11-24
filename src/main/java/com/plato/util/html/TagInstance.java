@@ -3,6 +3,7 @@ package com.plato.util.html;
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.plato.util.html.Attribute.ATTR_DELIMIT;
 import static com.plato.util.html.ClassAttribute.CLASS_DELIMIT;
 import static com.plato.util.html.HTMLSearchableCompression.ESCAPE;
 import static com.plato.util.html.StyleAttribute.STYLE_DELIMIT;
@@ -19,6 +20,7 @@ public class TagInstance {
   private Tag                  tag;
   private List<StyleAttribute> styleAttributes;
   private List<ClassAttribute> classAttributes;
+  private List<Attribute>      otherAttributes;
   private int                  rangeFrom;
   private int                  rangeTo;
 
@@ -44,6 +46,7 @@ public class TagInstance {
     this.rangeTo = rangeTo;
     this.styleAttributes = new LinkedList<>();
     this.classAttributes = new LinkedList<>();
+    this.otherAttributes = new LinkedList<>();
   }
 
   private TagInstance(Tag tag, int rangeFrom, int rangeTo) {
@@ -54,6 +57,7 @@ public class TagInstance {
     this.rangeTo = rangeTo;
     this.styleAttributes = new LinkedList<>();
     this.classAttributes = new LinkedList<>();
+    this.otherAttributes = new LinkedList<>();
   }
 
   // Only for self closing tags
@@ -66,6 +70,7 @@ public class TagInstance {
     this.rangeTo = rangeFrom;
     this.styleAttributes = new LinkedList<>();
     this.classAttributes = new LinkedList<>();
+    this.otherAttributes = new LinkedList<>();
   }
 
   public TagInstance(String sTagName, int rangeFrom) {
@@ -83,6 +88,23 @@ public class TagInstance {
       this.rangeTo = rangeFrom;
     this.styleAttributes = new LinkedList<>();
     this.classAttributes = new LinkedList<>();
+    this.otherAttributes = new LinkedList<>();
+  }
+
+  List<StyleAttribute> getStyleAttributes() {
+    return styleAttributes;
+  }
+
+  List<ClassAttribute> getClassAttributes() {
+    return classAttributes;
+  }
+
+  List<Attribute> getOtherAttributes() {
+    return otherAttributes;
+  }
+
+  void setRangeTo(int to) {
+    rangeTo = to;
   }
 
   static TagInstance deserializeString(String in, boolean selfClosing) {
@@ -92,17 +114,19 @@ public class TagInstance {
     }
     // Isolate tag props
     // it will always start with style
-    String regexStyleOrClass = "(" + STYLE_DELIMIT + ")|(" + CLASS_DELIMIT + ")";
+    String regexStyleOrClass =
+      "(" + STYLE_DELIMIT + ")|(" + CLASS_DELIMIT + ")|(" + ATTR_DELIMIT + ")";
     String[] sTemp = in.split(regexStyleOrClass);
     String[] sTagProps = sTemp[0].split(";");
     TagInstance t = new TagInstance(Tag.getInstance(sTagProps[0]), Integer.parseInt(sTagProps[1]),
       Integer.parseInt(sTagProps[2]));
-
+    // If no attribute, return
     if (sTemp.length < 2 || "".equals(sTemp[1].trim()))
       return t;
 
     boolean hasStyle = in.contains(STYLE_DELIMIT);
     boolean hasClass = in.contains(CLASS_DELIMIT);
+    boolean hasOtherAttr = in.contains(ATTR_DELIMIT);
     int indexOfClass = hasStyle ? 2 : 1;
     if (hasStyle) {
       // parse style
@@ -120,11 +144,22 @@ public class TagInstance {
       }
     }
 
+    if (hasOtherAttr) {
+      String[] sAttr = sTemp[1].split(";");
+      for (String a : sAttr) {
+        t.addAttribute(Attribute.deserializeString(a));
+      }
+    }
+
     return t;
   }
 
   public void addStyleAttribute(StyleAttribute s) {
     styleAttributes.add(s);
+  }
+
+  public void addAttribute(Attribute attribute) {
+    otherAttributes.add(attribute);
   }
 
   void addClassAttribute(ClassAttribute c) {
@@ -153,6 +188,14 @@ public class TagInstance {
       openingString.append("\"");
     }
 
+    for (Attribute attr : otherAttributes) {
+      openingString.append(" ");
+      openingString.append(attr.key());
+      openingString.append("=\"");
+      openingString.append(attr.value());
+      openingString.append("\"");
+    }
+
     return openingString.append(">").toString();
   }
 
@@ -171,6 +214,7 @@ public class TagInstance {
     s.append(tag.toString()).append(";").append(from()).append(";").append(to());
     addAttributesToStringBuilder(s, styleAttributes, STYLE_DELIMIT);
     addAttributesToStringBuilder(s, classAttributes, CLASS_DELIMIT);
+    addAttributesToStringBuilder(s, otherAttributes, ATTR_DELIMIT);
     return s.toString();
   }
 
@@ -183,11 +227,11 @@ public class TagInstance {
   }
 
   private void addAttributesToStringBuilder(StringBuilder s,
-                                            List<? extends Attribute> attributes,
+                                            List<? extends StringSerializable> attributes,
                                             String attrTag) {
     if (!attributes.isEmpty()) {
       s.append(attrTag);
-      for (Attribute a : attributes) {
+      for (StringSerializable a : attributes) {
         s.append(a.serializeString()).append(";");
       }
       s.deleteCharAt(s.length() - 1);
@@ -234,17 +278,5 @@ public class TagInstance {
         "" :
         "\n" + classAttributes);
     return tagName().toString() + "; " + from() + "; " + to() + queue;
-  }
-
-  List<StyleAttribute> getStyleAttributes() {
-    return styleAttributes;
-  }
-
-  List<ClassAttribute> getClassAttributes() {
-    return classAttributes;
-  }
-
-  void setRangeTo(int to) {
-    rangeTo = to;
   }
 }

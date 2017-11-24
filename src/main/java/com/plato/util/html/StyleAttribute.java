@@ -5,7 +5,8 @@ import static com.plato.util.html.HTMLSearchableCompression.ESCAPE;
 /**
  * Created by Alan Mantoux.
  */
-public class StyleAttribute implements Attribute {
+public class StyleAttribute implements StringSerializable {
+  static final String STYLE         = "style";
   static final String STYLE_REGEX   = "style=\"(\\{)?"
     // Open any style instruction
     + "("
@@ -17,12 +18,28 @@ public class StyleAttribute implements Attribute {
     + ")*"
     // Clos option style attribute
     + "(\\})?\"";
-  static final String STYLE_DELIMIT = ESCAPE + "style";
+  static final String STYLE_DELIMIT = ESCAPE + STYLE;
   private String key;
   private String value;
 
   public StyleAttribute(String key, String value) {
     this.key = key;
+    this.value = value;
+  }
+
+  String getKey() {
+    return key;
+  }
+
+  public void setKey(String key) {
+    this.key = key;
+  }
+
+  String getValue() {
+    return value;
+  }
+
+  public void setValue(String value) {
     this.value = value;
   }
 
@@ -61,21 +78,5 @@ public class StyleAttribute implements Attribute {
 
   public String toString() {
     return key + ":" + value;
-  }
-
-  String getKey() {
-    return key;
-  }
-
-  public void setKey(String key) {
-    this.key = key;
-  }
-
-  String getValue() {
-    return value;
-  }
-
-  public void setValue(String value) {
-    this.value = value;
   }
 }

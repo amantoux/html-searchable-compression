@@ -27,6 +27,36 @@ public class HTMLSearchableCompression {
     this.selfClosings = new LinkedList<>();
   }
 
+  public Deque<TagInstance> getTags() {
+    Deque<TagInstance> tempTags = new LinkedList<>();
+    Deque<TagInstance> cloneTags = new LinkedList<>();
+    for (TagInstance t : tags) {
+      tempTags.push(t);
+    }
+    for (TagInstance t : tempTags) {
+      cloneTags.push(t);
+    }
+
+    return cloneTags;
+  }
+
+  public Deque<TagInstance> getSelfClosings() {
+    Deque<TagInstance> tempTags = new LinkedList<>();
+    Deque<TagInstance> cloneTags = new LinkedList<>();
+    for (TagInstance t : selfClosings) {
+      tempTags.push(t);
+    }
+    for (TagInstance t : tempTags) {
+      cloneTags.push(t);
+    }
+
+    return cloneTags;
+  }
+
+  public String getPlainText() {
+    return plainText;
+  }
+
   public static void main(String[] args) {
     HTMLSearchableCompression parser = new HTMLSearchableCompression();
     long start, end;
@@ -89,64 +119,6 @@ public class HTMLSearchableCompression {
     System.out.println("");
   }
 
-  /*
-      Non-selfclosing tags are stored in a stack structure "tags"
-      Self closing tags are stored in a list structure "selfClosings"
-      Style attributes are stored within the tag instance
-   */
-  public void encode(String in) {
-    Pattern pattern = Pattern.compile(Tag.getRegex());
-    Matcher m = pattern.matcher(in);
-
-    /* Helper variables */
-    int nextToParseIndex = 0;
-    StringBuilder sbPlainText = new StringBuilder();
-    Deque<TagInstance> tempStack =
-      new LinkedList<>(); // Structure to store opened tag not yet closed
-    int offset = 0; // offset for regular tags
-    int closingOffset = 0; // offset for closing tags
-
-    /* decoding algorithm */
-    while (m.find()) {
-
-      String sTag = in.substring(m.start(), m.end());
-      TagInstance tInstance;
-
-      if (sTag.charAt(1) != '/') {
-        tInstance = getTagOpening(m, tempStack, offset, closingOffset, sTag);
-      } else {
-        tInstance = getTagClosing(m, tempStack, offset, sTag);
-      }
-
-      sbPlainText.append(in.substring(nextToParseIndex, m.start()));
-      nextToParseIndex = m.start() + sTag.length();
-
-      if (!tInstance.tagName().isSelfClosing)
-        offset += sTag.length();
-      else
-        closingOffset += sTag.length();
-
-    }
-    plainText = sbPlainText.append(in.substring(nextToParseIndex)).toString();
-  }
-
-  private long computeSize() {
-    long size = plainText.length() * (long) 16;
-    for (TagInstance t : tags) {
-      size += 32 * 2 + t.tagName().toString().length() * 16;
-      for (StyleAttribute s : t.getStyleAttributes()) {
-        size += (s.getKey().length() + s.getValue().length()) * 16;
-      }
-      for (ClassAttribute c : t.getClassAttributes()) {
-        size += (c.getValue().length()) * 16;
-      }
-    }
-    for (TagInstance t : selfClosings) {
-      size += 32 * 2 + t.tagName().toString().length() * 16;
-    }
-    return size;
-  }
-
   public static String decode(String plain,
                               Deque<TagInstance> inTags,
                               Deque<TagInstance> sClosings) {
@@ -184,28 +156,6 @@ public class HTMLSearchableCompression {
     return html.insertFirst(c.plainText.substring(0, index)).toString();
   }
 
-  /**
-   * Assumption : their are always regular tags, selfClosing tags are optional
-   *
-   * @return the String format of the compression
-   */
-  public String serializeTagsString() {
-    StringBuilder s = new StringBuilder();
-
-    // Serialize regular tags
-    s.append(TAGS_DELIMIT);
-    for (TagInstance t : tags) {
-      s.append(TAG_DELIMIT).append(t.serializeString());
-    }
-
-    s.append(TAGS_DELIMIT);
-    for (TagInstance t : selfClosings) {
-      s.append(TAG_DELIMIT).append(t.serializeString());
-    }
-
-    return s.toString();
-  }
-
   public static HTMLSearchableCompression deserializeString(String in) {
     HTMLSearchableCompression c = new HTMLSearchableCompression();
     String[] tmp = in.split(TAGS_DELIMIT);
@@ -230,6 +180,94 @@ public class HTMLSearchableCompression {
     }
 
     return c;
+  }
+
+  public static String decode(String plain, String tags) {
+    HTMLSearchableCompression c = deserializeString(tags);
+    return decode(plain, c.getTags(), c.getSelfClosings());
+  }
+
+  /*
+      Non-selfclosing tags are stored in a stack structure "tags"
+      Self closing tags are stored in a list structure "selfClosings"
+      Style attributes are stored within the tag instance
+   */
+  public void encode(String in) {
+    Pattern pattern = Pattern.compile(Tag.getRegex());
+    Matcher m = pattern.matcher(in);
+
+    /* Helper variables */
+    int nextToParseIndex = 0;
+    StringBuilder sbPlainText = new StringBuilder();
+
+    // Structure to store opened tag not yet closed
+    Deque<TagInstance> tempStack = new LinkedList<>();
+    // offset for regular tags
+    int offset = 0;
+    // offset for closing tags
+    int closingOffset = 0;
+
+    /* decoding algorithm */
+    while (m.find()) {
+
+      String sTag = in.substring(m.start(), m.end());
+      TagInstance tInstance;
+
+      if (sTag.charAt(1) != '/') {
+        tInstance = getTagOpening(m, tempStack, offset, closingOffset, sTag);
+      } else {
+        tInstance = getTagClosing(m, tempStack, offset, sTag);
+      }
+
+      sbPlainText.append(in.substring(nextToParseIndex, m.start()));
+      nextToParseIndex = m.start() + sTag.length();
+
+      if (!tInstance.tagName().isSelfClosing)
+        offset += sTag.length();
+      else
+        closingOffset += sTag.length();
+
+    }
+    plainText = sbPlainText.append(in.substring(nextToParseIndex)).toString();
+  }
+
+  /**
+   * Assumption : their are always regular tags, selfClosing tags are optional
+   *
+   * @return the String format of the compression
+   */
+  public String serializeTagsString() {
+    StringBuilder s = new StringBuilder();
+
+    // Serialize regular tags
+    s.append(TAGS_DELIMIT);
+    for (TagInstance t : tags) {
+      s.append(TAG_DELIMIT).append(t.serializeString());
+    }
+
+    s.append(TAGS_DELIMIT);
+    for (TagInstance t : selfClosings) {
+      s.append(TAG_DELIMIT).append(t.serializeString());
+    }
+
+    return s.toString();
+  }
+
+  private long computeSize() {
+    long size = plainText.length() * (long) 16;
+    for (TagInstance t : tags) {
+      size += 32 * 2 + t.tagName().toString().length() * 16;
+      for (StyleAttribute s : t.getStyleAttributes()) {
+        size += (s.getKey().length() + s.getValue().length()) * 16;
+      }
+      for (ClassAttribute c : t.getClassAttributes()) {
+        size += (c.getValue().length()) * 16;
+      }
+    }
+    for (TagInstance t : selfClosings) {
+      size += 32 * 2 + t.tagName().toString().length() * 16;
+    }
+    return size;
   }
 
   private TagInstance getTagOpening(Matcher m,
@@ -300,7 +338,8 @@ public class HTMLSearchableCompression {
 
   private void findAttributes(String sTag, TagInstance t) {
     Pattern p = Pattern.compile(
-      "(" + ClassAttribute.CLASS_REGEX + ")" + "|" + "(" + StyleAttribute.STYLE_REGEX + ")");
+      "(" + ClassAttribute.CLASS_REGEX + ")" + "|" + "(" + StyleAttribute.STYLE_REGEX + ")" + "|"
+        + "(" + Attribute.ATTR_REGEX + ")");
     Matcher m = p.matcher(sTag);
     /* If there is a attribute in the tag */
     while (m.find()) {
@@ -308,9 +347,10 @@ public class HTMLSearchableCompression {
       String sAttr = sTag.substring(m.start(), m.end());
       if (sAttr.startsWith("class")) {
         classAttribute(sAttr, t);
-      }
-      if (sAttr.startsWith("style")) {
+      } else if (sAttr.startsWith("style")) {
         styleAttribute(sAttr, t);
+      } else {
+        attribute(sAttr, t);
       }
     }
   }
@@ -333,38 +373,10 @@ public class HTMLSearchableCompression {
     }
   }
 
-  public static String decode(String plain, String tags) {
-    HTMLSearchableCompression c = deserializeString(tags);
-    return decode(plain, c.getTags(), c.getSelfClosings());
-  }
-
-  public Deque<TagInstance> getTags() {
-    Deque<TagInstance> tempTags = new LinkedList<>();
-    Deque<TagInstance> cloneTags = new LinkedList<>();
-    for (TagInstance t : tags) {
-      tempTags.push(t);
-    }
-    for (TagInstance t : tempTags) {
-      cloneTags.push(t);
-    }
-
-    return cloneTags;
-  }
-
-  public Deque<TagInstance> getSelfClosings() {
-    Deque<TagInstance> tempTags = new LinkedList<>();
-    Deque<TagInstance> cloneTags = new LinkedList<>();
-    for (TagInstance t : selfClosings) {
-      tempTags.push(t);
-    }
-    for (TagInstance t : tempTags) {
-      cloneTags.push(t);
-    }
-
-    return cloneTags;
-  }
-
-  public String getPlainText() {
-    return plainText;
+  private void attribute(String sAttr, TagInstance t) {
+    String[] keyValue = sAttr.split("=");
+    String key = keyValue[0].trim();
+    String value = keyValue[1].split("\"")[1].split("\"")[0].trim();
+    t.addAttribute(new Attribute(key, value));
   }
 }

@@ -71,7 +71,7 @@ public enum Tag {
 
     // TODO: support any attribute
     // (^\")*
-    sbRegex.append(")(\\s(class|style|href|target)=\"[^\"]+\")*");
+    sbRegex.append(")(\\s[^\"]+=\"[^\"]+\")*");
     sbRegex.append(">");
     return sbRegex.toString();
   }
