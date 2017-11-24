@@ -84,4 +84,11 @@ public class HTMLSearchableCompressionTest {
     assertEquals("Deserialize : ", exp, obs);
   }
 
+  @Test
+  public void encodeWithUrl() throws Exception {
+    String toEncode =
+      "<a href=\"https://www.franceinter.fr\" target=\"_blank\">https://www.franceinter.fr</a>";
+    parser.encode(toEncode);
+  }
+
 }

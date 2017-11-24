@@ -68,7 +68,10 @@ public enum Tag {
       sbRegex.append(t.string).append("|");
     }
     sbRegex.deleteCharAt(sbRegex.length() - 1);
-    sbRegex.append(")(\\s(class|style)=\"[^\"]+\")*");
+
+    // TODO: support any attribute
+    // (^\")*
+    sbRegex.append(")(\\s(class|style|href|target)=\"[^\"]+\")*");
     sbRegex.append(">");
     return sbRegex.toString();
   }
