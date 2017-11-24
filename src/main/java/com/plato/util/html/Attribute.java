@@ -9,11 +9,11 @@ public class Attribute implements StringSerializable {
 
   static final String ATTR_DELIMIT = ESCAPE + "attr";
   static       String ATTR_REGEX   =
-    // attribute key
+    // attribute key should not contain '"' or '<' or '>' or ' '
     "[^(\"|<|>|\\s)]+"
       // equals
       + "="
-      // regular attribute (class or other)
+      // attribute value should not contain '"'
       + "\"[^\"]+\"";
   private String key;
   private String value;
