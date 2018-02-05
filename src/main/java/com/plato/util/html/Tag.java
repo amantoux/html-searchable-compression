@@ -4,8 +4,31 @@ package com.plato.util.html;
  * Created by Alan Mantoux.
  */
 public enum Tag {
-  P("p"), STRONG("strong"), EM("em"), BR("br", true), A("a"), DIV("div"), SPAN("span"), H1(
-    "h1"), H2("h2"), H3("h3");
+  HTML("html"),
+  HEAD("head"),
+  STYLE("style"),
+  META("meta", true),
+  BODY("body"),
+  P("p"),
+  STRONG("strong"),
+  EM("em"),
+  BR("br", true),
+  A("a"),
+  DIV("div"),
+  SPAN("span"),
+  TABLE("table"),
+  TBODY("tbody"),
+  THEAD("thead"),
+  TR("tr"),
+  TD("td"),
+  H1("h1"),
+  H2("h2"),
+  H3("h3"),
+  H4("h4"),
+  H5("h5"),
+  H6("h6"),
+  HR("hr", true),
+  IMG("img", true);
 
 
   String string;
@@ -20,17 +43,46 @@ public enum Tag {
     this.isSelfClosing = isSelfClosing;
   }
 
+  public static String getRegex() {
+    StringBuilder sbRegex = new StringBuilder();
+    sbRegex.append("</?(");
+    for (Tag t : Tag.values()) {
+      sbRegex.append(t.string).append("|");
+    }
+    sbRegex.deleteCharAt(sbRegex.length() - 1);
+
+    // (^\")*
+    sbRegex.append(")(\\s[^\"]+=\"[^\"]+\")*");
+    sbRegex.append(">");
+    return sbRegex.toString();
+  }
+
+  public static String getRegexClosing() {
+    StringBuilder sbRegex = new StringBuilder();
+    for (Tag t : Tag.values()) {
+      sbRegex.append("</").append(t.string).append('>').append('|');
+    }
+    sbRegex.deleteCharAt(sbRegex.length() - 1);
+    return sbRegex.toString();
+  }
+
+  public static String getRegexOpening() {
+    StringBuilder sbRegex = new StringBuilder();
+    sbRegex.append("<(");
+    for (Tag t : Tag.values()) {
+      sbRegex.append(t.string).append("|");
+    }
+    sbRegex.deleteCharAt(sbRegex.length() - 1);
+    sbRegex.append(")\\s?(").append(Attribute.ATTR_REGEX).append(")?>");
+    return sbRegex.toString();
+  }
+
   public static Tag getInstance(String s) {
     for (Tag t : values()) {
       if (t.toString().equals(s))
         return t;
     }
     return null;
-  }
-
-  @Override
-  public String toString() {
-    return string;
   }
 
   public static Tag isTag(String input) {
@@ -61,38 +113,8 @@ public enum Tag {
     return "<" + toString() + ">";
   }
 
-  public static String getRegex() {
-    StringBuilder sbRegex = new StringBuilder();
-    sbRegex.append("</?(");
-    for (Tag t : Tag.values()) {
-      sbRegex.append(t.string).append("|");
-    }
-    sbRegex.deleteCharAt(sbRegex.length() - 1);
-
-    // TODO: support any attribute
-    // (^\")*
-    sbRegex.append(")(\\s[^\"]+=\"[^\"]+\")*");
-    sbRegex.append(">");
-    return sbRegex.toString();
-  }
-
-  public static String getRegexClosing() {
-    StringBuilder sbRegex = new StringBuilder();
-    for (Tag t : Tag.values()) {
-      sbRegex.append("</").append(t.string).append('>').append('|');
-    }
-    sbRegex.deleteCharAt(sbRegex.length() - 1);
-    return sbRegex.toString();
-  }
-
-  public static String getRegexOpening() {
-    StringBuilder sbRegex = new StringBuilder();
-    sbRegex.append("<(");
-    for (Tag t : Tag.values()) {
-      sbRegex.append(t.string).append("|");
-    }
-    sbRegex.deleteCharAt(sbRegex.length() - 1);
-    sbRegex.append(")\\s?(").append(Attribute.ATTR_REGEX).append(")?>");
-    return sbRegex.toString();
+  @Override
+  public String toString() {
+    return string;
   }
 }

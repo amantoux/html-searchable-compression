@@ -6,6 +6,7 @@ import java.util.List;
 import static com.plato.util.html.Attribute.ATTR_DELIMIT;
 import static com.plato.util.html.ClassAttribute.CLASS_DELIMIT;
 import static com.plato.util.html.HTMLSearchableCompression.ESCAPE;
+import static com.plato.util.html.HTMLSearchableCompression.notBewteenQuotesRegex;
 import static com.plato.util.html.StyleAttribute.STYLE_DELIMIT;
 
 /**
@@ -13,10 +14,11 @@ import static com.plato.util.html.StyleAttribute.STYLE_DELIMIT;
  */
 public class TagInstance {
 
-  static final         String TAG_DELIMIT  = ESCAPE + "tag";
-  private static final String OUT_OF_RANGE =
+  static final         String TAG_DELIMIT              = ESCAPE + "tag";
+  private static final String OUT_OF_RANGE             =
     "rangeFrom and rangeTo must both be greater or equal than 0";
-  private static final String UNRECOGNIZED = " is not a recognized tag";
+  private static final String SEMICOLON_NOT_BTW_QUOTES = notBewteenQuotesRegex(";");
+  private static final String UNRECOGNIZED             = " is not a recognized tag";
   private Tag                  tag;
   private List<StyleAttribute> styleAttributes;
   private List<ClassAttribute> classAttributes;
@@ -108,18 +110,19 @@ public class TagInstance {
   }
 
   static TagInstance deserializeString(String in, boolean selfClosing) {
-    if (selfClosing) {
-      String[] sTagProps = in.split(";");
-      return new TagInstance(Tag.getInstance(sTagProps[0]), Integer.parseInt(sTagProps[1]));
-    }
     // Isolate tag props
-    // it will always start with style
+    // it will always start with style then class
     String regexStyleOrClass =
       "(" + STYLE_DELIMIT + ")|(" + CLASS_DELIMIT + ")|(" + ATTR_DELIMIT + ")";
     String[] sTemp = in.split(regexStyleOrClass);
     String[] sTagProps = sTemp[0].split(";");
-    TagInstance t = new TagInstance(Tag.getInstance(sTagProps[0]), Integer.parseInt(sTagProps[1]),
-      Integer.parseInt(sTagProps[2]));
+    TagInstance t;
+    if (selfClosing) {
+      t = new TagInstance(Tag.getInstance(sTagProps[0]), Integer.parseInt(sTagProps[1]));
+    } else {
+      t = new TagInstance(Tag.getInstance(sTagProps[0]), Integer.parseInt(sTagProps[1]),
+        Integer.parseInt(sTagProps[2]));
+    }
     // If no attribute, return
     if (sTemp.length < 2 || "".equals(sTemp[1].trim()))
       return t;
@@ -127,10 +130,12 @@ public class TagInstance {
     boolean hasStyle = in.contains(STYLE_DELIMIT);
     boolean hasClass = in.contains(CLASS_DELIMIT);
     boolean hasOtherAttr = in.contains(ATTR_DELIMIT);
-    int indexOfClass = hasStyle ? 2 : 1;
+    int indexOfStyle = 1;
+    int indexOfClass = hasStyle ? indexOfStyle + 1 : indexOfStyle;
+    int indexOfOtherAttr = hasClass ? indexOfClass + 1 : indexOfClass;
     if (hasStyle) {
       // parse style
-      String[] sStyles = sTemp[1].split(";");
+      String[] sStyles = sTemp[indexOfStyle].split(";");
       for (String s : sStyles) {
         t.addStyleAttribute(StyleAttribute.deserializeString(s));
       }
@@ -145,7 +150,7 @@ public class TagInstance {
     }
 
     if (hasOtherAttr) {
-      String[] sAttr = sTemp[1].split(";");
+      String[] sAttr = sTemp[indexOfOtherAttr].split(SEMICOLON_NOT_BTW_QUOTES);
       for (String a : sAttr) {
         t.addAttribute(Attribute.deserializeString(a));
       }
@@ -208,10 +213,10 @@ public class TagInstance {
   }
 
   String serializeString() {
-    if (tag.isSelfClosing)
-      return tag.toString() + ";" + from();
     StringBuilder s = new StringBuilder();
-    s.append(tag.toString()).append(";").append(from()).append(";").append(to());
+    s.append(tag.toString()).append(";").append(from());
+    if (!tag.isSelfClosing)
+      s.append(";").append(to());
     addAttributesToStringBuilder(s, styleAttributes, STYLE_DELIMIT);
     addAttributesToStringBuilder(s, classAttributes, CLASS_DELIMIT);
     addAttributesToStringBuilder(s, otherAttributes, ATTR_DELIMIT);
@@ -276,7 +281,7 @@ public class TagInstance {
     String queue =
       (styleAttributes.isEmpty() ? "" : "\n" + styleAttributes) + (classAttributes.isEmpty() ?
         "" :
-        "\n" + classAttributes);
+        "\n" + classAttributes) + (otherAttributes.isEmpty() ? "" : "\n" + otherAttributes);
     return tagName().toString() + "; " + from() + "; " + to() + queue;
   }
 }

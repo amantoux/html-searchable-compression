@@ -57,6 +57,10 @@ public class HTMLSearchableCompression {
     return plainText;
   }
 
+  static String notBewteenQuotesRegex(String s) {
+    return s + "(?:(?<=[\"]" + s + ")|(?=[\"]))";
+  }
+
   public static void main(String[] args) {
     HTMLSearchableCompression parser = new HTMLSearchableCompression();
     long start, end;
@@ -314,7 +318,7 @@ public class HTMLSearchableCompression {
     while (sClosings.peek() != null) {
       t = sClosings.pop();
       // add concat is insert as it is faster than two inserts...
-      html.insertFirst(t.tagName().openingString() + plainText.substring(t.to(), idx));
+      html.insertFirst(t.openingString() + plainText.substring(t.to(), idx));
       idx = t.from();
     }
     html.insertFirst(plainText.substring(0, idx));
@@ -374,7 +378,9 @@ public class HTMLSearchableCompression {
   }
 
   private void attribute(String sAttr, TagInstance t) {
-    String[] keyValue = sAttr.split("=");
+    // notBetweenQuotesRegex to handle attribute with "=" in its value
+    // e.g. : <meta content="text/html; charset=utf-8">
+    String[] keyValue = sAttr.split(notBewteenQuotesRegex("="));
     String key = keyValue[0].trim();
     String value = keyValue[1].split("\"")[1].split("\"")[0].trim();
     t.addAttribute(new Attribute(key, value));

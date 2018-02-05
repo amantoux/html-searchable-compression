@@ -1,13 +1,13 @@
-package com.eagles.util.html;
+package com.plato.util.html;
 
-import com.plato.util.html.Attribute;
-import com.plato.util.html.HTMLSearchableCompression;
-import com.plato.util.html.StyleAttribute;
-import com.plato.util.html.TagInstance;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.Deque;
 import java.util.LinkedList;
 
@@ -133,5 +133,42 @@ public class HTMLSearchableCompressionTest {
     String exp = parser.serializeTagsString();
     String obs = HTMLSearchableCompression.deserializeString(exp).serializeTagsString();
     assertEquals("Deserialize with URL : ", exp, obs);
+  }
+
+  @Test
+  public void richHtmlMailFromOutlook() throws Exception {
+
+    // Load sample file
+    StringBuilder sb = new StringBuilder();
+    String line = null;
+    FileInputStream fn = new FileInputStream("testRealHtml.html");
+    InputStreamReader inReader = new InputStreamReader(fn, Charset.forName("UTF-8"));
+    BufferedReader bReader = new BufferedReader(inReader);
+    while ((line = bReader.readLine()) != null) {
+      sb.append(line);
+    }
+
+    // If last ';' is missing in style attribut of original, it is added when decompressed
+    String sFirst = "style=\"font-size:11\"";
+    int first = sb.indexOf(sFirst);
+    sb.insert(first + sFirst.length() - 1, ';');
+    String sSecond = "style=\"font-size:10\"";
+    int second = sb.indexOf(sSecond);
+    sb.insert(second + sSecond.length() - 1, ';');
+    String sThird = "style=\"font-size:7; color:#404040\"";
+    int third = sb.indexOf(sThird);
+    sb.insert(third + sThird.length() - 1, ';');
+    String sThirdBis = "style=\"font-size:7; ";
+
+    // Space within style attributes are deleted by compression/decompression
+    int thirdBis = sb.indexOf(sThirdBis);
+    sb.deleteCharAt(thirdBis + sThirdBis.length() - 1);
+
+    HTMLSearchableCompression comp = new HTMLSearchableCompression();
+    comp.encode(sb.toString());
+    String tags = comp.serializeTagsString();
+    String plain = comp.getPlainText();
+    String result = HTMLSearchableCompression.decode(plain, tags);
+    assertEquals("Encoding/decoding more complex html", sb.toString(), result);
   }
 }

@@ -1,6 +1,7 @@
 package com.plato.util.html;
 
 import static com.plato.util.html.HTMLSearchableCompression.ESCAPE;
+import static com.plato.util.html.HTMLSearchableCompression.notBewteenQuotesRegex;
 
 /**
  * Created by Alan Mantoux.
@@ -28,7 +29,9 @@ public class Attribute implements StringSerializable {
       throw new NullPointerException("Input value is cannot be null");
     if ("".equals(a.trim()))
       throw new IllegalArgumentException("Attribute must have a key and a value");
-    String[] tmpAttr = a.split("=");
+    // notBetweenQuotesRegex to handle attribute with "=" in its value
+    // e.g. : <meta content="text/html; charset=utf-8">
+    String[] tmpAttr = a.split(notBewteenQuotesRegex("="));
     String[] tmpValue = tmpAttr[1].split("\"");
     if (tmpValue.length < 2)
       throw new IllegalArgumentException("Attribute value must be of form \"xxx\"");
@@ -45,6 +48,11 @@ public class Attribute implements StringSerializable {
 
   @Override
   public String serializeString() {
+    return key + "=\"" + value + "\"";
+  }
+
+  @Override
+  public String toString() {
     return key + "=\"" + value + "\"";
   }
 }
