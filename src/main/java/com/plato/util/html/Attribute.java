@@ -9,17 +9,17 @@ import static com.plato.util.html.HTMLSearchableCompression.notBewteenQuotesRege
 public class Attribute implements StringSerializable {
 
   static final String ATTR_DELIMIT = ESCAPE + "attr";
-  static       String ATTR_REGEX   =
-    // attribute key should not contain '"' or '<' or '>' or ' '
-    "[^(\"|<|>|\\s)]+"
-      // equals
-      + "="
-      // attribute value should not contain '"'
-      + "\"[^\"]+\"";
+  static String ATTR_REGEX =
+      // attribute key should not contain '"' or '<' or '>' or ' ' or ';'
+      "[^(\"|<|>|\\s|;)]+"
+          // equals
+          + "="
+          // attribute value should not contain '"'
+          + "\"[^\"]+\"";
   private String key;
   private String value;
 
-  public Attribute(String key, String value) {
+  Attribute(String key, String value) {
     this.key = key;
     this.value = value;
   }
@@ -36,6 +36,15 @@ public class Attribute implements StringSerializable {
     if (tmpValue.length < 2)
       throw new IllegalArgumentException("Attribute value must be of form \"xxx\"");
     return new Attribute(tmpAttr[0], tmpValue[1]);
+  }
+
+  static void createAttribute(String sAttr, TagInstance t) {
+    // notBetweenQuotesRegex to handle attribute with "=" in its value
+    // e.g. : <meta content="text/html; charset=utf-8">
+    String[] keyValue = sAttr.split(notBewteenQuotesRegex("="));
+    String key = keyValue[0].trim();
+    String value = keyValue[1].split("\"")[1].split("\"")[0].trim();
+    t.addAttribute(new Attribute(key, value));
   }
 
   public String key() {

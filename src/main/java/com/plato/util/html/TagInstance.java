@@ -2,8 +2,11 @@ package com.plato.util.html;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.plato.util.html.Attribute.ATTR_DELIMIT;
+import static com.plato.util.html.Attribute.ATTR_REGEX;
 import static com.plato.util.html.ClassAttribute.CLASS_DELIMIT;
 import static com.plato.util.html.HTMLSearchableCompression.ESCAPE;
 import static com.plato.util.html.HTMLSearchableCompression.notBewteenQuotesRegex;
@@ -14,19 +17,19 @@ import static com.plato.util.html.StyleAttribute.STYLE_DELIMIT;
  */
 public class TagInstance {
 
-  static final         String TAG_DELIMIT              = ESCAPE + "tag";
-  private static final String OUT_OF_RANGE             =
-    "rangeFrom and rangeTo must both be greater or equal than 0";
+  static final String TAG_DELIMIT = ESCAPE + "tag";
+  private static final String OUT_OF_RANGE =
+      "rangeFrom and rangeTo must both be greater or equal than 0";
   private static final String SEMICOLON_NOT_BTW_QUOTES = notBewteenQuotesRegex(";");
-  private static final String UNRECOGNIZED             = " is not a recognized tag";
-  private Tag                  tag;
+  private static final String UNRECOGNIZED = " is not a recognized tag";
+  private Tag tag;
   private List<StyleAttribute> styleAttributes;
   private List<ClassAttribute> classAttributes;
-  private List<Attribute>      otherAttributes;
-  private int                  rangeFrom;
-  private int                  rangeTo;
+  private List<Attribute> otherAttributes;
+  private int rangeFrom;
+  private int rangeTo;
 
-  public TagInstance(String sTagName, int rangeFrom, int rangeTo) {
+  TagInstance(String sTagName, int rangeFrom, int rangeTo) {
 
     if (sTagName == null || sTagName.trim().isEmpty())
       throw new NullPointerException("TagInstance string cannot be null or empty");
@@ -51,31 +54,7 @@ public class TagInstance {
     this.otherAttributes = new LinkedList<>();
   }
 
-  private TagInstance(Tag tag, int rangeFrom, int rangeTo) {
-    if (rangeFrom < 0 || rangeTo < 0)
-      throw new IllegalArgumentException(OUT_OF_RANGE);
-    this.tag = tag;
-    this.rangeFrom = rangeFrom;
-    this.rangeTo = rangeTo;
-    this.styleAttributes = new LinkedList<>();
-    this.classAttributes = new LinkedList<>();
-    this.otherAttributes = new LinkedList<>();
-  }
-
-  // Only for self closing tags
-  private TagInstance(Tag tag, int rangeFrom) {
-    if (rangeFrom < 0)
-      throw new IllegalArgumentException(OUT_OF_RANGE);
-    this.tag = tag;
-    this.tag.isSelfClosing = true;
-    this.rangeFrom = rangeFrom;
-    this.rangeTo = rangeFrom;
-    this.styleAttributes = new LinkedList<>();
-    this.classAttributes = new LinkedList<>();
-    this.otherAttributes = new LinkedList<>();
-  }
-
-  public TagInstance(String sTagName, int rangeFrom) {
+  TagInstance(String sTagName, int rangeFrom) {
 
     if (rangeFrom < 0)
       throw new IllegalArgumentException(OUT_OF_RANGE);
@@ -93,27 +72,35 @@ public class TagInstance {
     this.otherAttributes = new LinkedList<>();
   }
 
-  List<StyleAttribute> getStyleAttributes() {
-    return styleAttributes;
+  private TagInstance(Tag tag, int rangeFrom, int rangeTo) {
+    if (rangeFrom < 0 || rangeTo < 0)
+      throw new IllegalArgumentException(OUT_OF_RANGE);
+    this.tag = tag;
+    this.rangeFrom = rangeFrom;
+    this.rangeTo = rangeTo;
+    this.styleAttributes = new LinkedList<>();
+    this.classAttributes = new LinkedList<>();
+    this.otherAttributes = new LinkedList<>();
   }
+  // Only for self closing tags
 
-  List<ClassAttribute> getClassAttributes() {
-    return classAttributes;
-  }
-
-  List<Attribute> getOtherAttributes() {
-    return otherAttributes;
-  }
-
-  void setRangeTo(int to) {
-    rangeTo = to;
+  private TagInstance(Tag tag, int rangeFrom) {
+    if (rangeFrom < 0)
+      throw new IllegalArgumentException(OUT_OF_RANGE);
+    this.tag = tag;
+    this.tag.isSelfClosing = true;
+    this.rangeFrom = rangeFrom;
+    this.rangeTo = rangeFrom;
+    this.styleAttributes = new LinkedList<>();
+    this.classAttributes = new LinkedList<>();
+    this.otherAttributes = new LinkedList<>();
   }
 
   static TagInstance deserializeString(String in, boolean selfClosing) {
     // Isolate tag props
     // it will always start with style then class
     String regexStyleOrClass =
-      "(" + STYLE_DELIMIT + ")|(" + CLASS_DELIMIT + ")|(" + ATTR_DELIMIT + ")";
+        "(" + STYLE_DELIMIT + ")|(" + CLASS_DELIMIT + ")|(" + ATTR_DELIMIT + ")";
     String[] sTemp = in.split(regexStyleOrClass);
     String[] sTagProps = sTemp[0].split(";");
     TagInstance t;
@@ -121,7 +108,7 @@ public class TagInstance {
       t = new TagInstance(Tag.getInstance(sTagProps[0]), Integer.parseInt(sTagProps[1]));
     } else {
       t = new TagInstance(Tag.getInstance(sTagProps[0]), Integer.parseInt(sTagProps[1]),
-        Integer.parseInt(sTagProps[2]));
+          Integer.parseInt(sTagProps[2]));
     }
     // If no attribute, return
     if (sTemp.length < 2 || "".equals(sTemp[1].trim()))
@@ -150,13 +137,33 @@ public class TagInstance {
     }
 
     if (hasOtherAttr) {
-      String[] sAttr = sTemp[indexOfOtherAttr].split(SEMICOLON_NOT_BTW_QUOTES);
-      for (String a : sAttr) {
-        t.addAttribute(Attribute.deserializeString(a));
+      // Use pattern matcher for attribute (would need to handle weird lookahead/behind
+      // if we were to use .split(regex) [notBewteenQuotesRegex(";");]
+      Pattern pattern = Pattern.compile(ATTR_REGEX);
+      Matcher m = pattern.matcher(sTemp[indexOfOtherAttr]);
+      while (m.find()) {
+        String sAttr = sTemp[indexOfOtherAttr].substring(m.start(), m.end());
+        t.addAttribute(Attribute.deserializeString(sAttr));
       }
     }
 
     return t;
+  }
+
+  List<StyleAttribute> getStyleAttributes() {
+    return styleAttributes;
+  }
+
+  List<ClassAttribute> getClassAttributes() {
+    return classAttributes;
+  }
+
+  List<Attribute> getOtherAttributes() {
+    return otherAttributes;
+  }
+
+  void setRangeTo(int to) {
+    rangeTo = to;
   }
 
   public void addStyleAttribute(StyleAttribute s) {
@@ -231,6 +238,25 @@ public class TagInstance {
     return rangeTo;
   }
 
+  void findAttributes(String sTag) {
+    Pattern p = Pattern.compile(
+        "(" + ClassAttribute.CLASS_REGEX + ")" + "|" + "(" + StyleAttribute.STYLE_REGEX + ")" + "|"
+            + "(" + Attribute.ATTR_REGEX + ")");
+    Matcher m = p.matcher(sTag);
+    /* If there is a attribute in the tag */
+    while (m.find()) {
+      /* Instantiate Attribute class with style definition */
+      String sAttr = sTag.substring(m.start(), m.end());
+      if (sAttr.startsWith("class")) {
+        ClassAttribute.createClassAttribute(sAttr, this);
+      } else if (sAttr.startsWith("style")) {
+        StyleAttribute.createStyleAttribute(sAttr, this);
+      } else {
+        Attribute.createAttribute(sAttr, this);
+      }
+    }
+  }
+
   private void addAttributesToStringBuilder(StringBuilder s,
                                             List<? extends StringSerializable> attributes,
                                             String attrTag) {
@@ -279,9 +305,9 @@ public class TagInstance {
   @Override
   public String toString() {
     String queue =
-      (styleAttributes.isEmpty() ? "" : "\n" + styleAttributes) + (classAttributes.isEmpty() ?
-        "" :
-        "\n" + classAttributes) + (otherAttributes.isEmpty() ? "" : "\n" + otherAttributes);
+        (styleAttributes.isEmpty() ? "" : "\n" + styleAttributes) + (classAttributes.isEmpty() ?
+            "" :
+            "\n" + classAttributes) + (otherAttributes.isEmpty() ? "" : "\n" + otherAttributes);
     return tagName().toString() + "; " + from() + "; " + to() + queue;
   }
 }
