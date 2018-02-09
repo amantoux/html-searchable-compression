@@ -9,7 +9,6 @@ import static com.plato.util.html.Attribute.ATTR_DELIMIT;
 import static com.plato.util.html.Attribute.ATTR_REGEX;
 import static com.plato.util.html.ClassAttribute.CLASS_DELIMIT;
 import static com.plato.util.html.HTMLSearchableCompression.ESCAPE;
-import static com.plato.util.html.HTMLSearchableCompression.notBewteenQuotesRegex;
 import static com.plato.util.html.StyleAttribute.STYLE_DELIMIT;
 
 /**
@@ -20,7 +19,6 @@ public class TagInstance {
   static final String TAG_DELIMIT = ESCAPE + "tag";
   private static final String OUT_OF_RANGE =
       "rangeFrom and rangeTo must both be greater or equal than 0";
-  private static final String SEMICOLON_NOT_BTW_QUOTES = notBewteenQuotesRegex(";");
   private static final String UNRECOGNIZED = " is not a recognized tag";
   private Tag tag;
   private List<StyleAttribute> styleAttributes;

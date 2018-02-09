@@ -1,10 +1,16 @@
 package com.plato.util.html;
 
+import difflib.Delta;
+import difflib.DiffUtils;
+import difflib.Patch;
+
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.text.DecimalFormat;
+import java.util.Collections;
+import java.util.List;
 import java.util.Scanner;
 
 /**
@@ -12,7 +18,7 @@ import java.util.Scanner;
  */
 public class TestPerformanceClass {
 
-  public static final int NB_REPET = 1_000;
+  public static final int NB_REPET = 1;
 
   public static void main(String[] args) {
     System.out.println("Ready?");
@@ -26,8 +32,8 @@ public class TestPerformanceClass {
     String line = null;
 
     try (FileInputStream fn = new FileInputStream("testRealHtml.html");
-         InputStreamReader inReader = new InputStreamReader(fn, Charset.forName("UTF-8"));
-         BufferedReader bReader = new BufferedReader(inReader)) {
+      InputStreamReader inReader = new InputStreamReader(fn, Charset.forName("UTF-8"));
+      BufferedReader bReader = new BufferedReader(inReader)) {
 
       while ((line = bReader.readLine()) != null) {
         sb.append(line);
@@ -41,24 +47,7 @@ public class TestPerformanceClass {
 
   private static long computeSize(HTMLSearchableCompression parser) {
     long size = parser.getPlainText().length() * (long) 16;
-    for (TagInstance t : parser.getTags()) {
-      size += 32 * 2 + t.tagName().toString().length() * 16;
-      for (StyleAttribute s : t.getStyleAttributes()) {
-        size += (s.getKey().length() + s.getValue().length()) * 16;
-      }
-      for (ClassAttribute c : t.getClassAttributes()) {
-        size += (c.getValue().length()) * 16;
-      }
-      for (Attribute a : t.getOtherAttributes()) {
-        size += (a.key().length() + a.value().length()) * 16;
-      }
-    }
-    for (TagInstance t : parser.getSelfClosings()) {
-      size += 32 * 2 + t.tagName().toString().length() * 16;
-      for (Attribute a : t.getOtherAttributes()) {
-        size += (a.key().length() + a.value().length()) * 16;
-      }
-    }
+    size += parser.serializeTagsString().length() * (long) 16;
     return size;
   }
 
@@ -74,8 +63,8 @@ public class TestPerformanceClass {
     System.out.println("Init string length : " + seed.length());
     System.out.println("Number of repetitions : " + NB_REPET);
     System.out.println(
-        "Estimated size of file : " + seed.length() * NB_REPET * 16 /* char size*/ / 1024 / 1024
-            + "Mo");
+      "Estimated size of file : " + seed.length() * NB_REPET * 16 /* char size*/ / 1024 / 1024
+        + "Mo");
     String toEncode = sb.toString();
 
     start = System.currentTimeMillis();
@@ -108,8 +97,18 @@ public class TestPerformanceClass {
     System.out.println("");
 
     start = System.currentTimeMillis();
-    HTMLSearchableCompression.decode(parser.getPlainText(), parser.getTags(), parser.getSelfClosings());
+    String decoded = HTMLSearchableCompression.decode(parser.getPlainText(), parser.getTags(),
+      parser.getSelfClosings());
     end = System.currentTimeMillis();
+
+    List<String> original = Collections.singletonList(toEncode);
+    List<String> revised = Collections.singletonList(decoded);
+
+    Patch patch = DiffUtils.diff(original, revised);
+    List<Delta> deltas = patch.getDeltas();
+    for (Delta delta : deltas) {
+      System.out.println(delta);
+    }
 
     System.out.println("---- decoding ----");
     System.out.println("Decoded in " + (end - start) + "ms");
