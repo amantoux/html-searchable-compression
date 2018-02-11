@@ -152,7 +152,7 @@ public enum Tag {
     sbRegex.deleteCharAt(sbRegex.length() - 1);
 
     // (^\")*
-    sbRegex.append(")(\\s[^\"]+=\"[^\"]+\")*");
+    sbRegex.append(")(\\s[^\"]+=\"[^\"]*\")*");
     sbRegex.append(">");
     return sbRegex.toString();
   }
