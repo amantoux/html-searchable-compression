@@ -109,7 +109,7 @@ public enum Tag {
   STYLE("style"),
   SUB("sub"),
   SUMMARY("summary"),
-  SUP("SUP"),
+  SUP("sup"),
   TABLE("table"),
   TBODY("tbody"),
   TD("td"),

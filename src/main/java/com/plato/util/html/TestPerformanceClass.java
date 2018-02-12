@@ -18,7 +18,7 @@ import java.util.Scanner;
  */
 public class TestPerformanceClass {
 
-  public static final int NB_REPET = 1;
+  public static final int NB_REPET = 1_000;
 
   public static void main(String[] args) {
     System.out.println("Ready?");
@@ -107,7 +107,7 @@ public class TestPerformanceClass {
     Patch patch = DiffUtils.diff(original, revised);
     List<Delta> deltas = patch.getDeltas();
     for (Delta delta : deltas) {
-      System.out.println(delta);
+//      System.out.println(delta);
     }
 
     System.out.println("---- decoding ----");

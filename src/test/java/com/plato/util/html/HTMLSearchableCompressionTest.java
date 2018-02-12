@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 public class HTMLSearchableCompressionTest {
 
   private static String             toEncode     =
-    "This is... <br><strong>REALLY <em>REALLY</em></strong><p style=\"font-color:red;font-size:10em;\"><em>good</em></p>123";
+    "This is... <br><strong>REALLY <em>REALLY</em></strong><p style=\"font-color:red;font-size:10em\"><em>good</em></p>123";
   private static String             plainText    = "This is... REALLY REALLYgood123";
   private static Deque<TagInstance> tags         = new LinkedList<>();
   private static Deque<TagInstance> selfClosings = new LinkedList<>();
@@ -170,5 +170,47 @@ public class HTMLSearchableCompressionTest {
     String plain = comp.getPlainText();
     String result = HTMLSearchableCompression.decode(plain, tags);
     assertEquals("Encoding/decoding more complex html", sb.toString(), result);
+  }
+
+  @Test
+  public void richSNCFMailFromOutlook() throws Exception {
+
+    // Load sample file
+    StringBuilder sb = new StringBuilder();
+    String line = null;
+    FileInputStream fn = new FileInputStream("testSNCFHtml.html");
+    InputStreamReader inReader = new InputStreamReader(fn, Charset.forName("UTF-8"));
+    BufferedReader bReader = new BufferedReader(inReader);
+    while ((line = bReader.readLine()) != null) {
+      sb.append(line);
+    }
+
+    HTMLSearchableCompression comp = new HTMLSearchableCompression();
+    comp.encode(sb.toString());
+    String tags = comp.serializeTagsString();
+    String plain = comp.getPlainText();
+    String result = HTMLSearchableCompression.decode(plain, tags);
+    assertEquals("Encoding/decoding more complex html", sb.toString(), result);
+  }
+
+  @Test
+  public void sncfDeserializeBugMailFromOutlook() throws Exception {
+
+    // Load sample file
+    StringBuilder sb = new StringBuilder();
+    String line = null;
+    FileInputStream fn = new FileInputStream("testSNCFDeserBug.html");
+    InputStreamReader inReader = new InputStreamReader(fn, Charset.forName("UTF-8"));
+    BufferedReader bReader = new BufferedReader(inReader);
+    while ((line = bReader.readLine()) != null) {
+      sb.append(line);
+    }
+
+    HTMLSearchableCompression comp = new HTMLSearchableCompression();
+    comp.encode(sb.toString());
+    String tags = comp.serializeTagsString();
+    String plain = comp.getPlainText();
+    String result = HTMLSearchableCompression.decode(plain, tags);
+    System.out.println(result);
   }
 }

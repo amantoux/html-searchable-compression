@@ -7,11 +7,9 @@ public class PlayGround {
   }
 
   private static void runTest() {
-    String init = "<body><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n" +
-        "    <meta content=\"text/html; charset=utf-8\">" +
-        "Essai</body>";
+    String init = "<td style=\"font-size:0px\">abc<br></td>";
     StringBuilder sb = new StringBuilder();
-    for (int i = 0; i < 1_000_000; i++) {
+    for (int i = 0; i < 1; i++) {
       sb.append(init);
     }
     String in = sb.toString();
@@ -21,5 +19,6 @@ public class PlayGround {
     String tags = parser.serializeTagsString();
     String plain = parser.getPlainText();
     HTMLSearchableCompression parser2 = HTMLSearchableCompression.deserializeString(tags);
+    System.out.println(HTMLSearchableCompression.decode(plain, parser2.getTags(), parser2.getSelfClosings()));
   }
 }

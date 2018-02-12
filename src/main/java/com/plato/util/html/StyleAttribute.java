@@ -37,6 +37,8 @@ public class StyleAttribute implements StringSerializable {
   }
 
   static void createStyleAttribute(String sAttr, TagInstance t) {
+    if (sAttr.split("\"(\\{)?").length < 2)
+      return;
     String sMap = sAttr.split("\"(\\{)?")[1].split("(\\})?\"")[0];
     for (String s : sMap.split("\\;")) {
       String[] sKeyValue = s.split("\\:");

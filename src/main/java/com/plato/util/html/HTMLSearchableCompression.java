@@ -163,9 +163,9 @@ public class HTMLSearchableCompression {
       sbPlainText.append(in.substring(nextToParseIndex, m.start()));
       nextToParseIndex = m.start() + sTag.length();
 
-      if (!tInstance.tagName().isSelfClosing)
+      if (!tInstance.tagName().isSelfClosing) {
         offset += sTag.length();
-      else
+      } else
         closingOffset += sTag.length();
 
     }
