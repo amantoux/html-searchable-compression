@@ -10,7 +10,10 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import static com.plato.util.html.StyleAttribute.STYLE_REGEX;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -19,7 +22,7 @@ import static org.junit.Assert.assertEquals;
 public class HTMLSearchableCompressionTest {
 
   private static String             toEncode     =
-    "This is... <br><strong>REALLY <em>REALLY</em></strong><p style=\"font-color:red;font-size:10em\"><em>good</em></p>123";
+    "This is... <br><strong>REALLY <em>REALLY</em></strong><p style=\"font-color:red;font-size:10em;\"><em>good</em></p>123";
   private static String             plainText    = "This is... REALLY REALLYgood123";
   private static Deque<TagInstance> tags         = new LinkedList<>();
   private static Deque<TagInstance> selfClosings = new LinkedList<>();
@@ -183,6 +186,15 @@ public class HTMLSearchableCompressionTest {
     BufferedReader bReader = new BufferedReader(inReader);
     while ((line = bReader.readLine()) != null) {
       sb.append(line);
+    }
+
+    String in = sb.toString();
+
+    Pattern p = Pattern.compile(STYLE_REGEX);
+    Matcher m = p.matcher(in);
+    while (m.find()) {
+      String sStyle = in.substring(m.start(), m.end());
+      System.out.println(sStyle);
     }
 
     HTMLSearchableCompression comp = new HTMLSearchableCompression();

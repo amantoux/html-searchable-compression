@@ -16,7 +16,7 @@ public class StyleAttribute implements StringSerializable {
       + "([a-z0-9]|\\s|-|\\)|\\(|,|#)*" + "\\;"
       // Close any style instruction
       + ")*"
-      // Clos option style attribute
+      // Close option style attribute
       + "(\\})?\"";
   static final String STYLE_DELIMIT = ESCAPE + STYLE;
   private String key;
