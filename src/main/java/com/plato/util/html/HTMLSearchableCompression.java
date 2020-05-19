@@ -1,6 +1,6 @@
 package com.plato.util.html;
 
-import com.plato.util.datastructures.InsertStringBuilder;
+import org.mantoux.util.datastructures.InsertStringBuilder;
 
 import java.util.Deque;
 import java.util.LinkedList;
@@ -9,16 +9,13 @@ import java.util.regex.Pattern;
 
 import static com.plato.util.html.TagInstance.TAG_DELIMIT;
 
-/**
- * Created by Alan Mantoux.
- */
 public class HTMLSearchableCompression {
 
-  static final         String ESCAPE       = "#";
-  private static final String TAGS_DELIMIT = ESCAPE + "tags" + ESCAPE;
-  private Deque<TagInstance> tags;
-  private Deque<TagInstance> selfClosings;
-  private String             plainText;
+  static final         String             ESCAPE       = "#";
+  private static final String             TAGS_DELIMIT = ESCAPE + "tags" + ESCAPE;
+  private              Deque<TagInstance> tags;
+  private              Deque<TagInstance> selfClosings;
+  private              String             plainText;
 
   public HTMLSearchableCompression() {
     super();
@@ -54,10 +51,6 @@ public class HTMLSearchableCompression {
 
   public String getPlainText() {
     return plainText;
-  }
-
-  static String notBewteenQuotesRegex(String s) {
-    return s + "(?:(?<=[\"]" + s + ")|(?=[\"]))";
   }
 
   public static String decode(String plain,
@@ -258,6 +251,10 @@ public class HTMLSearchableCompression {
     html.insertFirst(t.closingString() + s);
     ts.push(t);
     return t.to();
+  }
+
+  static String notBewteenQuotesRegex(String s) {
+    return s + "(?:(?<=[\"]" + s + ")|(?=[\"]))";
   }
 
 }

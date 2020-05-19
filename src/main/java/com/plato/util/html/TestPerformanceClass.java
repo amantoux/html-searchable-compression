@@ -97,8 +97,9 @@ public class TestPerformanceClass {
     System.out.println("");
 
     start = System.currentTimeMillis();
-    String decoded = HTMLSearchableCompression.decode(parser.getPlainText(), parser.getTags(),
-      parser.getSelfClosings());
+    String decoded = HTMLSearchableCompression.decode(parser.getPlainText(),
+                                                      parser.getTags(),
+                                                      parser.getSelfClosings());
     end = System.currentTimeMillis();
 
     List<String> original = Collections.singletonList(toEncode);
@@ -107,7 +108,7 @@ public class TestPerformanceClass {
     Patch patch = DiffUtils.diff(original, revised);
     List<Delta> deltas = patch.getDeltas();
     for (Delta delta : deltas) {
-//      System.out.println(delta);
+      //      System.out.println(delta);
     }
 
     System.out.println("---- decoding ----");

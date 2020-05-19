@@ -1,4 +1,5 @@
-.idea
-target/
-doc/
+/.idea
+/target
+/doc
 .DS_Store
+/HTMLSearchableCompression.iml
